@@ -182,6 +182,13 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--paper);color:var(--t
 .day-pick-btn{padding:8px 16px;border-radius:99px;border:0.5px solid var(--border);background:linear-gradient(135deg,var(--purple),var(--purple2));color:#fff;font-size:13px;cursor:pointer;font-family:'Noto Sans JP',sans-serif;font-weight:500}
 .day-pick-btn:hover{opacity:.88}
 .modal-danger:hover{opacity:.9}
+
+/* エクスポート */
+.export-bar{display:flex;gap:8px;padding:10px 16px;border-top:0.5px solid var(--border);background:var(--paper)}
+.export-btn-pdf{flex:1;background:linear-gradient(135deg,#ef4444,#dc2626);color:#fff;border:none;border-radius:var(--radius-sm);padding:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Noto Sans JP',sans-serif}
+.export-btn-pdf:hover{opacity:.88}
+.export-btn-csv{flex:1;background:linear-gradient(135deg,#16a34a,#15803d);color:#fff;border:none;border-radius:var(--radius-sm);padding:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Noto Sans JP',sans-serif}
+.export-btn-csv:hover{opacity:.88}
 .detail-row{display:flex;gap:10px;font-size:13px;margin-bottom:6px}
 .detail-label{color:var(--text-sub);min-width:60px;flex-shrink:0}
 .detail-val{color:var(--text);flex:1;line-height:1.6}
@@ -277,8 +284,11 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--paper);color:var(--t
             <button class="small-btn" id="viewToggleBtn" onclick="toggleEntryView()">☰ リスト</button>
           </div>
         </div>
-
         <div id="entryList"><div class="loading">読み込み中...</div></div>
+        <div class="export-bar">
+          <button class="export-btn-pdf" onclick="exportMyPDF()">📄 PDFで保存</button>
+          <button class="export-btn-csv" onclick="exportMyCSV()">📊 CSVで保存</button>
+        </div>
       </div>
     </div>
 
@@ -359,9 +369,23 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--paper);color:var(--t
 <div class="overlay" id="studentDetailOverlay">
   <div class="modal detail-modal" style="max-width:520px">
     <h3 id="sdTitle"></h3>
-    <div id="sdRanks" style="margin-bottom:1rem;display:flex;gap:6px;flex-wrap:wrap"></div>
+    <!-- 段位表示 + 変更ボタン -->
+    <div id="sdRanks" style="margin-bottom:.5rem;display:flex;gap:6px;flex-wrap:wrap"></div>
+    <div style="display:flex;gap:6px;margin-bottom:1rem">
+      <button class="graph-btn" onclick="openTeacherRankEdit('毛筆')">🖌 毛筆の段位を変更</button>
+      <button class="graph-btn" onclick="openTeacherRankEdit('硬筆')">✏️ 硬筆の段位を変更</button>
+    </div>
+    <!-- 段位変更パネル（先生用・折りたたみ） -->
+    <div id="sdRankEditPanel" style="display:none;margin-bottom:1rem">
+      <div class="card-head-label" id="sdRankEditLabel" style="margin-bottom:8px">段位を選択</div>
+      <div class="rank-pills" id="sdRankPills" style="padding:0;flex-wrap:wrap"></div>
+    </div>
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px"><div class="card-head-label">記録ログ</div><button class="graph-btn" id="sdHistoryBtn" onclick="openStudentHistory(this.getAttribute('data-uid'))">📈 昇段グラフ</button></div>
     <div id="sdEntries"></div>
+    <div class="export-bar" style="margin-top:1rem;border-top:none;padding:0">
+      <button class="export-btn-pdf" onclick="exportStudentPDF(sdCurrentUid)">📄 PDFで保存</button>
+      <button class="export-btn-csv" onclick="exportStudentCSV(sdCurrentUid)">📊 CSVで保存</button>
+    </div>
     <button class="modal-close" onclick="closeStudentDetail()">閉じる</button>
   </div>
 </div>
@@ -638,14 +662,7 @@ window.askRankChange = (rank) => {
     document.getElementById('confirmOverlay').classList.add('open');
   });
 };
-window.confirmRankChange = async () => {
-  if (!pendingRank) return;
-  const ts = Date.now();
-  await set(ref(db, `students/${currentUser.id}/ranks/${currentGenre}`), { rank: pendingRank, updatedAt: ts });
-  // 昇段履歴を追記
-  await push(ref(db, `students/${currentUser.id}/rankHistory/${currentGenre}`), { rank: pendingRank, ts });
-  pendingRank = null; closeConfirm();
-};
+// confirmRankChange は teacher_rank_js 内で統合済み
 window.closeConfirm = () => { document.getElementById('confirmOverlay').classList.remove('open'); pendingRank = null; };
 
 // 写真
@@ -766,17 +783,14 @@ window.switchTeacherTab = (tab) => {
 };
 
 window.openStudentDetail = async (uid) => {
+  sdCurrentUid = uid;
+  document.getElementById('sdRankEditPanel').style.display = 'none';
   const snap = await get(ref(db, `students/${uid}`));
   const d = snap.val() || {};
   document.getElementById('sdTitle').textContent = (d.display||uid) + ' さん';
   document.getElementById('sdHistoryBtn').setAttribute('data-uid', uid);
   const ranks = d.ranks || {};
-  document.getElementById('sdRanks').innerHTML = ['毛筆','硬筆'].map(g =>
-    `<span class="student-rank-badge badge-${g}" style="font-size:13px;padding:4px 12px">
-      ${g}: ${ranks[g]?.rank||'未設定'}
-      ${ranks[g]?.updatedAt?`<span style="font-size:10px;opacity:.6;margin-left:4px">${fmtDT(ranks[g].updatedAt)}</span>`:''}
-    </span>`
-  ).join('');
+  renderSdRanks(ranks);
   let all = [];
   ['毛筆','硬筆'].forEach(g => {
     if (d.entries?.[g]) Object.values(d.entries[g]).forEach(e => all.push({...e, genre:g}));
@@ -795,6 +809,181 @@ window.openStudentDetail = async (uid) => {
   document.getElementById('studentDetailOverlay').classList.add('open');
 };
 window.closeStudentDetail = () => document.getElementById('studentDetailOverlay').classList.remove('open');
+
+// ── エクスポート共通 ──
+function buildExportData(uid, displayName, data) {
+  // data: { ranks, entries, rankHistory }
+  const ranks = data.ranks || {};
+  const lines = [];
+  lines.push({ genre:'', date:'', content:'【段位記録】', note:'' });
+  ['毛筆','硬筆'].forEach(g => {
+    const cur = ranks[g]?.rank || '未設定';
+    lines.push({ genre: g, date: ranks[g]?.updatedAt ? new Date(ranks[g].updatedAt).toLocaleDateString('ja-JP') : '—', content: '現在: ' + cur, note: '' });
+    const hist = data.rankHistory?.[g] ? Object.values(data.rankHistory[g]).sort((a,b)=>a.ts-b.ts) : [];
+    hist.forEach(h => lines.push({ genre: g, date: new Date(h.ts).toLocaleDateString('ja-JP'), content: '昇段: ' + h.rank, note: '' }));
+  });
+  lines.push({ genre:'', date:'', content:'【練習記録】', note:'' });
+  ['毛筆','硬筆'].forEach(g => {
+    if (!data.entries?.[g]) return;
+    Object.values(data.entries[g]).sort((a,b)=>a.ts-b.ts).forEach(e => {
+      lines.push({ genre: g, date: e.date, content: '', note: e.note || '' });
+    });
+  });
+  return lines;
+}
+
+// ── PDF出力（印刷ダイアログ） ──
+function makePDFWindow(uid, displayName, lines) {
+  const rows = lines.map(l =>
+    `<tr>
+      <td style="padding:5px 8px;border-bottom:1px solid #eee;font-weight:${l.content.startsWith('【')?'bold':'normal'};color:${l.content.startsWith('【')?'#444':'#222'}">${l.genre}</td>
+      <td style="padding:5px 8px;border-bottom:1px solid #eee;white-space:nowrap">${l.date}</td>
+      <td style="padding:5px 8px;border-bottom:1px solid #eee">${l.content}</td>
+      <td style="padding:5px 8px;border-bottom:1px solid #eee;color:#555">${l.note}</td>
+    </tr>`
+  ).join('');
+  const html = `<!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8">
+    <title>${displayName} 書道手帳</title>
+    <style>
+      body{font-family:'Noto Sans JP',sans-serif;padding:2rem;color:#222;max-width:720px;margin:0 auto}
+      h1{font-size:20px;margin-bottom:4px}
+      p{font-size:12px;color:#888;margin-bottom:1.5rem}
+      table{width:100%;border-collapse:collapse;font-size:13px}
+      th{text-align:left;padding:6px 8px;border-bottom:2px solid #333;font-size:11px;color:#555;letter-spacing:.05em}
+      @media print{body{padding:1rem}}
+    </style>
+  </head><body>
+    <h1>${displayName} さんの書道手帳</h1>
+    <p>エクスポート日: ${new Date().toLocaleDateString('ja-JP')}</p>
+    <table>
+      <thead><tr><th>種別</th><th>日付</th><th>内容</th><th>メモ</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+    <script>window.onload=()=>{window.print()}<\/script>
+  </body></html>`;
+  const w = window.open('', '_blank');
+  w.document.write(html);
+  w.document.close();
+}
+
+// ── CSV出力 ──
+function makeCSV(uid, displayName, lines) {
+  const bom = '\uFEFF';
+  const header = '種別,日付,内容,メモ\n';
+  const body = lines.map(l =>
+    [l.genre, l.date, l.content, l.note].map(v => '"'+String(v).replace(/"/g,'""')+'"').join(',')
+  ).join('\n');
+  const blob = new Blob([bom + header + body], { type: 'text/csv;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = displayName + '_書道手帳.csv';
+  a.click();
+}
+
+// ── 生徒自身がエクスポート ──
+window.exportMyPDF = async () => {
+  const uid = currentUser.id;
+  const snap = await get(ref(db, `students/${uid}`));
+  const d = snap.val() || {};
+  const lines = buildExportData(uid, currentUser.display, d);
+  makePDFWindow(uid, currentUser.display, lines);
+};
+window.exportMyCSV = async () => {
+  const uid = currentUser.id;
+  const snap = await get(ref(db, `students/${uid}`));
+  const d = snap.val() || {};
+  const lines = buildExportData(uid, currentUser.display, d);
+  makeCSV(uid, currentUser.display, lines);
+};
+
+// ── 先生が生徒のデータをエクスポート ──
+window.exportStudentPDF = async (uid) => {
+  if (!uid) return;
+  const snap = await get(ref(db, `students/${uid}`));
+  const d = snap.val() || {};
+  const display = d.display || uid;
+  const lines = buildExportData(uid, display, d);
+  makePDFWindow(uid, display, lines);
+};
+window.exportStudentCSV = async (uid) => {
+  if (!uid) return;
+  const snap = await get(ref(db, `students/${uid}`));
+  const d = snap.val() || {};
+  const display = d.display || uid;
+  const lines = buildExportData(uid, display, d);
+  makeCSV(uid, display, lines);
+};
+
+
+
+// ── 先生による段位変更 ──
+let sdCurrentUid = null;
+let sdEditGenre = null;
+
+function renderSdRanks(ranks) {
+  document.getElementById('sdRanks').innerHTML = ['毛筆','硬筆'].map(g =>
+    `<span class="student-rank-badge badge-${g}" style="font-size:13px;padding:4px 12px">
+      ${g}: ${ranks[g]?.rank||'未設定'}
+      ${ranks[g]?.updatedAt?`<span style="font-size:10px;opacity:.6;margin-left:4px">${fmtDT(ranks[g].updatedAt)}</span>`:''}
+    </span>`
+  ).join('');
+}
+
+window.openTeacherRankEdit = async (genre) => {
+  sdEditGenre = genre;
+  const panel = document.getElementById('sdRankEditPanel');
+  // 同じジャンルを再クリックしたら閉じる
+  if (panel.style.display !== 'none' && panel.dataset.genre === genre) {
+    panel.style.display = 'none';
+    return;
+  }
+  panel.dataset.genre = genre;
+  panel.style.display = 'block';
+  document.getElementById('sdRankEditLabel').textContent = genre + ' の段位を選択（確認ポップアップが出ます）';
+  const snap = await get(ref(db, `students/${sdCurrentUid}/ranks/${genre}`));
+  const cur = (snap.val()||{}).rank;
+  document.getElementById('sdRankPills').innerHTML = RANKS.map(r =>
+    `<span class="rpill${r===cur?' cur-'+genre:''}" style="margin-bottom:4px" onclick="askTeacherRankChange('${r}')">${r}</span>`
+  ).join('');
+};
+
+window.askTeacherRankChange = async (rank) => {
+  const snap = await get(ref(db, `students/${sdCurrentUid}/ranks/${sdEditGenre}`));
+  const cur = (snap.val()||{}).rank || '未設定';
+  if (rank === cur) return;
+  pendingRank = rank;
+  document.getElementById('confirmMsg').textContent = `「${cur}」 → 「${rank}」（${sdEditGenre}）`;
+  document.getElementById('confirmOverlay').classList.add('open');
+  // confirmRankChangeを先生モード用に上書き
+  window._teacherRankMode = true;
+};
+
+// confirmRankChange を先生・生徒両対応に拡張
+const _origConfirmRankChange = window.confirmRankChange;
+window.confirmRankChange = async () => {
+  if (!pendingRank) return;
+  const ts = Date.now();
+  if (window._teacherRankMode && sdCurrentUid) {
+    // 先生が変更
+    await set(ref(db, `students/${sdCurrentUid}/ranks/${sdEditGenre}`), { rank: pendingRank, updatedAt: ts });
+    await push(ref(db, `students/${sdCurrentUid}/rankHistory/${sdEditGenre}`), { rank: pendingRank, ts });
+    // 表示を即時更新
+    const snap = await get(ref(db, `students/${sdCurrentUid}/ranks`));
+    renderSdRanks(snap.val()||{});
+    // 段位ピルも更新
+    document.getElementById('sdRankPills').innerHTML = RANKS.map(r =>
+      `<span class="rpill${r===pendingRank?' cur-'+sdEditGenre:''}" style="margin-bottom:4px" onclick="askTeacherRankChange('${r}')">${r}</span>`
+    ).join('');
+    window._teacherRankMode = false;
+    pendingRank = null;
+    closeConfirm();
+  } else {
+    // 生徒が変更（従来の処理）
+    await set(ref(db, `students/${currentUser.id}/ranks/${currentGenre}`), { rank: pendingRank, updatedAt: ts });
+    await push(ref(db, `students/${currentUser.id}/rankHistory/${currentGenre}`), { rank: pendingRank, ts });
+    pendingRank = null; closeConfirm();
+  }
+};
 
 // ── 記録削除 ──
 window.askDelEntry = (key, date) => {
