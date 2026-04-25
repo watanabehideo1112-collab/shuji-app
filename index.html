@@ -157,6 +157,31 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--paper);color:var(--t
 .no-history{text-align:center;padding:2rem;color:var(--text-sub);font-size:13px}
 .graph-btn{font-size:12px;padding:3px 10px;border-radius:99px;border:0.5px solid var(--border);background:var(--paper);cursor:pointer;color:var(--text-sub);font-family:'Noto Sans JP',sans-serif;margin-left:8px}
 .graph-btn:hover{background:var(--paper-dark)}
+
+/* グリッド表示 */
+.entry-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:3px;padding:3px}
+.grid-cell{position:relative;aspect-ratio:1;cursor:pointer;overflow:hidden;border-radius:6px;background:linear-gradient(135deg,rgba(102,126,234,.08),rgba(118,75,162,.08))}
+.grid-cell img{width:100%;height:100%;object-fit:cover;display:block}
+.grid-cell-noimg{width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px}
+.grid-cell-noimg .gc-icon{font-size:22px}
+.grid-cell-noimg .gc-date{font-size:10px;color:var(--text-sub)}
+.grid-cell-del{position:absolute;top:4px;right:4px;width:20px;height:20px;border-radius:50%;background:rgba(220,38,38,.85);color:#fff;border:none;font-size:11px;cursor:pointer;display:none;align-items:center;justify-content:center;z-index:2}
+.grid-cell:hover .grid-cell-del{display:flex}
+.grid-cell-overlay{position:absolute;bottom:0;left:0;right:0;padding:4px 5px;background:linear-gradient(to top,rgba(0,0,0,.55),transparent);pointer-events:none}
+.grid-cell-overlay .gc-date2{font-size:10px;color:#fff}
+/* 生徒カード削除ボタン */
+.student-card{position:relative}
+.student-del-btn{position:absolute;top:10px;right:12px;font-size:11px;padding:3px 9px;border-radius:99px;border:0.5px solid rgba(220,38,38,.3);background:rgba(220,38,38,.06);color:#dc2626;cursor:pointer;font-family:'Noto Sans JP',sans-serif}
+.student-del-btn:hover{background:rgba(220,38,38,.12)}
+/* 並べ替えコントロール */
+.sort-bar{display:flex;align-items:center;gap:6px;padding:8px 14px;border-bottom:0.5px solid var(--border);overflow-x:auto;-webkit-overflow-scrolling:touch}
+.sort-pill{flex-shrink:0;font-size:11px;padding:4px 10px;border-radius:99px;border:0.5px solid var(--border);cursor:pointer;background:var(--paper);color:var(--text-sub);font-family:'Noto Sans JP',sans-serif;white-space:nowrap}
+.sort-pill.active{background:var(--ink);color:#fff;border-color:transparent}
+/* 削除確認モーダル赤ボタン */
+.modal-danger{flex:1;background:linear-gradient(135deg,#ef4444,#dc2626);color:#fff;border:none;border-radius:var(--radius-sm);padding:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:'Noto Sans JP',sans-serif}
+.day-pick-btn{padding:8px 16px;border-radius:99px;border:0.5px solid var(--border);background:linear-gradient(135deg,var(--purple),var(--purple2));color:#fff;font-size:13px;cursor:pointer;font-family:'Noto Sans JP',sans-serif;font-weight:500}
+.day-pick-btn:hover{opacity:.88}
+.modal-danger:hover{opacity:.9}
 .detail-row{display:flex;gap:10px;font-size:13px;margin-bottom:6px}
 .detail-label{color:var(--text-sub);min-width:60px;flex-shrink:0}
 .detail-val{color:var(--text);flex:1;line-height:1.6}
@@ -246,7 +271,13 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--paper);color:var(--t
         </div>
       </div>
       <div class="card">
-        <div class="card-head"><span class="card-head-label">記録ログ</span></div>
+        <div class="card-head">
+          <span class="card-head-label">記録ログ</span>
+          <div style="display:flex;gap:6px">
+            <button class="small-btn" id="viewToggleBtn" onclick="toggleEntryView()">☰ リスト</button>
+          </div>
+        </div>
+
         <div id="entryList"><div class="loading">読み込み中...</div></div>
       </div>
     </div>
@@ -259,7 +290,20 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--paper);color:var(--t
       </div>
       <div id="teacherStudents">
         <div class="card">
-          <div class="card-head"><span class="card-head-label">生徒一覧</span></div>
+          <div class="card-head">
+            <span class="card-head-label">生徒一覧</span>
+          </div>
+          <div class="sort-bar" id="studentSortBar">
+            <span style="font-size:11px;color:var(--text-sub);flex-shrink:0">曜日で表示:</span>
+            <span class="sort-pill active" onclick="setStudentSort('all')">全員</span>
+            <span class="sort-pill" onclick="setStudentSort('mon')">月</span>
+            <span class="sort-pill" onclick="setStudentSort('tue')">火</span>
+            <span class="sort-pill" onclick="setStudentSort('wed')">水</span>
+            <span class="sort-pill" onclick="setStudentSort('thu')">木</span>
+            <span class="sort-pill" onclick="setStudentSort('fri')">金</span>
+            <span class="sort-pill" onclick="setStudentSort('sat')">土</span>
+            <span class="sort-pill" onclick="setStudentSort('sun')">日</span>
+          </div>
           <div id="studentList"><div class="loading">読み込み中...</div></div>
         </div>
       </div>
@@ -322,9 +366,58 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--paper);color:var(--t
   </div>
 </div>
 
+
+<!-- 記録削除確認 -->
+<div class="overlay" id="delEntryOverlay">
+  <div class="modal">
+    <div class="modal-icon" style="background:linear-gradient(135deg,#ef4444,#dc2626)">🗑</div>
+    <h3>記録を削除しますか？</h3>
+    <div class="modal-change" id="delEntryMsg"></div>
+    <p>削除した記録は元に戻せません。</p>
+    <div class="modal-btns">
+      <button class="modal-danger" onclick="confirmDelEntry()">削除する</button>
+      <button class="modal-cancel" onclick="closeDelEntry()">キャンセル</button>
+    </div>
+  </div>
+</div>
+
+<!-- 生徒削除確認 -->
+<div class="overlay" id="delStudentOverlay">
+  <div class="modal">
+    <div class="modal-icon" style="background:linear-gradient(135deg,#ef4444,#dc2626)">🗑</div>
+    <h3>生徒を削除しますか？</h3>
+    <div class="modal-change" id="delStudentMsg"></div>
+    <p>この生徒のすべての記録・段位データが削除されます。元に戻せません。</p>
+    <div class="modal-btns">
+      <button class="modal-danger" onclick="confirmDelStudent()">削除する</button>
+      <button class="modal-cancel" onclick="closeDelStudent()">キャンセル</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- 曜日設定モーダル（先生用） -->
+<div class="overlay" id="dayPickerOverlay">
+  <div class="modal" style="max-width:340px">
+    <h3 id="dayPickerTitle">レッスン曜日を設定</h3>
+    <p style="margin-top:.5rem">この生徒さんのレッスン曜日を選んでください。</p>
+    <div style="display:flex;flex-wrap:wrap;gap:8px;margin:1rem 0">
+      <button class="day-pick-btn" onclick="saveLessonDay('mon')">月曜日</button>
+      <button class="day-pick-btn" onclick="saveLessonDay('tue')">火曜日</button>
+      <button class="day-pick-btn" onclick="saveLessonDay('wed')">水曜日</button>
+      <button class="day-pick-btn" onclick="saveLessonDay('thu')">木曜日</button>
+      <button class="day-pick-btn" onclick="saveLessonDay('fri')">金曜日</button>
+      <button class="day-pick-btn" onclick="saveLessonDay('sat')">土曜日</button>
+      <button class="day-pick-btn" onclick="saveLessonDay('sun')">日曜日</button>
+      <button class="day-pick-btn" style="background:var(--paper);color:var(--text-sub)" onclick="saveLessonDay(null)">設定なし</button>
+    </div>
+    <button class="modal-cancel" style="width:100%" onclick="closeDayPicker()">キャンセル</button>
+  </div>
+</div>
+
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getDatabase, ref, set, get, push, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+import { getDatabase, ref, set, get, push, onValue, remove } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyD2-7r-SZz4uQBHRRQdXqvkqp3rAH3bIVs",
@@ -345,6 +438,17 @@ const LS_USER = 'shuji_user';
 const LS_PHOTOS = 'shuji_photos';
 
 let currentUser = null, currentGenre = '毛筆', pendingRank = null, pendingPhotos = [], unsubFns = [];
+
+let entryViewMode = 'grid'; // 'grid' or 'list'
+let entrySortOrder = 'date-desc';
+let cachedEntries = null;
+let studentSortMode = 'all';
+let cachedStudentData = null;
+let pendingDelEntryKey = null;
+let pendingDelStudentUid = null;
+const DAYS = ['sun','mon','tue','wed','thu','fri','sat'];
+const DAY_LABELS = {mon:'月',tue:'火',wed:'水',thu:'木',fri:'金',sat:'土',sun:'日'};
+
 
 // 写真ローカル管理
 function savePhotoLocal(uid, genre, key, photos) {
@@ -482,25 +586,40 @@ function renderRankPills(data) {
 }
 
 function renderEntries(data) {
+  cachedEntries = data;
   const list = document.getElementById('entryList');
   const uid = currentUser.id, genre = currentGenre;
   if (!data) { list.innerHTML = '<div class="empty">記録がありません</div>'; return; }
-  const items = Object.entries(data).sort((a,b) => b[1].ts - a[1].ts);
-  if (!items.length) { list.innerHTML = '<div class="empty">記録がありません</div>'; return; }
-  list.innerHTML = items.map(([key, e]) => {
-    const photos = getPhotoLocal(uid, genre, key);
-    const thumbs = photos.length
-      ? photos.slice(0,2).map(s => `<img class="entry-thumb" src="${s}">`).join('')
-      : `<div class="entry-icon">${genre==='毛筆'?'🖌':'✏️'}</div>`;
-    return `<div class="entry-item" onclick="openDetail('${key}','${e.date}','${encodeURIComponent(e.note||'')}')">
-      <div class="entry-thumb-wrap">${thumbs}</div>
-      <div class="entry-meta">
-        <div class="entry-date">${e.date}</div>
-        <div class="entry-note">${e.note||'(メモなし)'}</div>
-        ${photos.length>1?`<div class="entry-sub">写真 ${photos.length}枚</div>`:''}
-      </div>
-    </div>`;
-  }).join('');
+  let items = sortEntries(Object.entries(data));
+  if (!items.length) { list.innerHTML = '<div class="empty">この条件の記録がありません</div>'; return; }
+  if (entryViewMode === 'grid') {
+    list.innerHTML = '<div class="entry-grid">' + items.map(([key, e]) => {
+      const photos = getPhotoLocal(uid, genre, key);
+      const img = photos.length ? `<img src="${photos[0]}" loading="lazy">` :
+        `<div class="grid-cell-noimg"><span class="gc-icon">${genre==='毛筆'?'🖌':'✏️'}</span><span class="gc-date">${e.date}</span></div>`;
+      return `<div class="grid-cell" onclick="openDetail('${key}','${e.date}','${encodeURIComponent(e.note||'')}')">
+        ${img}
+        ${photos.length?`<div class="grid-cell-overlay"><div class="gc-date2">${e.date}</div></div>`:''}
+        <button class="grid-cell-del" onclick="event.stopPropagation();askDelEntry('${key}','${e.date}')">✕</button>
+      </div>`;
+    }).join('') + '</div>';
+  } else {
+    list.innerHTML = items.map(([key, e]) => {
+      const photos = getPhotoLocal(uid, genre, key);
+      const thumbs = photos.length
+        ? photos.slice(0,2).map(s => `<img class="entry-thumb" src="${s}">`).join('')
+        : `<div class="entry-icon">${genre==='毛筆'?'🖌':'✏️'}</div>`;
+      return `<div class="entry-item" onclick="openDetail('${key}','${e.date}','${encodeURIComponent(e.note||'')}')">
+        <div class="entry-thumb-wrap">${thumbs}</div>
+        <div class="entry-meta">
+          <div class="entry-date">${e.date}</div>
+          <div class="entry-note">${e.note||'(メモなし)'}</div>
+          ${photos.length>1?`<div class="entry-sub">写真 ${photos.length}枚</div>`:''}
+        </div>
+        <button style="flex-shrink:0;background:rgba(220,38,38,.08);color:#dc2626;border:0.5px solid rgba(220,38,38,.2);border-radius:99px;padding:3px 9px;font-size:11px;cursor:pointer" onclick="event.stopPropagation();askDelEntry('${key}','${e.date}')">削除</button>
+      </div>`;
+    }).join('');
+  }
 }
 
 window.toggleRankList = () => {
@@ -587,8 +706,9 @@ function getLatestTs(d) {
 }
 
 function renderStudentList(data) {
+  cachedStudentData = data;
   const list = document.getElementById('studentList');
-  const entries = Object.entries(data);
+  let entries = sortStudents(Object.entries(data));
   if (!entries.length) { list.innerHTML = '<div class="empty">まだ生徒の記録がありません</div>'; return; }
   list.innerHTML = entries.map(([uid, d]) => {
     const ranks = d.ranks || {};
@@ -597,10 +717,22 @@ function renderStudentList(data) {
       ranks[g]?.rank ? `<span class="student-rank-badge badge-${g}">${g}: ${ranks[g].rank}</span>` : ''
     ).filter(Boolean).join('');
     const latest = getLatestTs(d);
+    const dayLabel = d.lessonDay ? DAY_LABELS[d.lessonDay] : null;
     return `<div class="student-card" onclick="openStudentDetail('${uid}')">
-      <div class="student-name">${display}</div>
-      <div class="student-ranks">${badges||'<span style="font-size:12px;color:var(--text-sub)">段位未設定</span>'}</div>
-      ${latest?`<div class="student-updated">最終更新: ${fmtDT(latest)}</div>`:''}
+      <div style="display:flex;align-items:flex-start;justify-content:space-between">
+        <div>
+          <div class="student-name">
+            ${display}
+            ${dayLabel ? `<span style="font-size:11px;font-weight:400;margin-left:6px;padding:2px 8px;border-radius:99px;background:rgba(102,126,234,.1);color:var(--purple2)">${dayLabel}曜日</span>` : ''}
+          </div>
+          <div class="student-ranks" style="margin-top:4px">${badges||'<span style="font-size:12px;color:var(--text-sub)">段位未設定</span>'}</div>
+          ${latest?`<div class="student-updated">最終更新: ${fmtDT(latest)}</div>`:''}
+        </div>
+        <div style="display:flex;gap:5px;flex-shrink:0;margin-left:8px">
+          <button class="graph-btn" onclick="event.stopPropagation();openDayPicker('${uid}','${display}')">曜日</button>
+          <button class="student-del-btn" style="position:static;margin:0" onclick="event.stopPropagation();askDelStudent('${uid}','${display}')">削除</button>
+        </div>
+      </div>
     </div>`;
   }).join('');
 }
@@ -663,6 +795,42 @@ window.openStudentDetail = async (uid) => {
   document.getElementById('studentDetailOverlay').classList.add('open');
 };
 window.closeStudentDetail = () => document.getElementById('studentDetailOverlay').classList.remove('open');
+
+// ── 記録削除 ──
+window.askDelEntry = (key, date) => {
+  pendingDelEntryKey = key;
+  document.getElementById('delEntryMsg').textContent = date + ' の記録';
+  document.getElementById('delEntryOverlay').classList.add('open');
+};
+window.confirmDelEntry = async () => {
+  if (!pendingDelEntryKey) return;
+  await remove(ref(db, `students/${currentUser.id}/entries/${currentGenre}/${pendingDelEntryKey}`));
+  // ローカル写真も削除
+  try {
+    const store = JSON.parse(localStorage.getItem(LS_PHOTOS) || '{}');
+    delete store[`${currentUser.id}_${currentGenre}_${pendingDelEntryKey}`];
+    localStorage.setItem(LS_PHOTOS, JSON.stringify(store));
+  } catch(e) {}
+  pendingDelEntryKey = null;
+  closeDelEntry();
+};
+window.closeDelEntry = () => { document.getElementById('delEntryOverlay').classList.remove('open'); pendingDelEntryKey = null; };
+
+// ── 生徒削除 ──
+window.askDelStudent = (uid, display) => {
+  pendingDelStudentUid = uid;
+  document.getElementById('delStudentMsg').textContent = display + ' さんのデータ';
+  document.getElementById('delStudentOverlay').classList.add('open');
+};
+window.confirmDelStudent = async () => {
+  if (!pendingDelStudentUid) return;
+  await remove(ref(db, `students/${pendingDelStudentUid}`));
+  pendingDelStudentUid = null;
+  closeDelStudent();
+  closeStudentDetail();
+};
+window.closeDelStudent = () => { document.getElementById('delStudentOverlay').classList.remove('open'); pendingDelStudentUid = null; };
+
 
 
 // ── 昇段履歴グラフ ──
@@ -797,7 +965,59 @@ function renderHistoryList(items, genre) {
 
 window.closeHistory = () => document.getElementById('historyOverlay').classList.remove('open');
 
-['confirmOverlay','detailOverlay','studentDetailOverlay','historyOverlay'].forEach(id => {
+
+window.toggleEntryView = () => {
+  entryViewMode = entryViewMode === 'grid' ? 'list' : 'grid';
+  document.getElementById('viewToggleBtn').textContent = entryViewMode === 'grid' ? '☰ リスト' : '⊞ グリッド';
+  if (cachedEntries) renderEntries(cachedEntries);
+};
+
+window.setSortOrder = (order) => {
+  entrySortOrder = order;
+  document.querySelectorAll('#sortBar .sort-pill').forEach(p => p.classList.remove('active'));
+  event.target.classList.add('active');
+  if (cachedEntries) renderEntries(cachedEntries);
+};
+
+window.setStudentSort = (mode) => {
+  studentSortMode = mode;
+  document.querySelectorAll('#studentSortBar .sort-pill').forEach(p => p.classList.remove('active'));
+  event.target.classList.add('active');
+  if (cachedStudentData) renderStudentList(cachedStudentData);
+};
+
+function sortEntries(items) {
+  return [...items].sort((a,b) => b[1].ts - a[1].ts);
+}
+
+function sortStudents(entries) {
+  if (studentSortMode === 'all') return [...entries].sort((a,b) => (a[1].display||a[0]).localeCompare(b[1].display||b[0], 'ja'));
+  // 曜日設定で絞り込み
+  return [...entries]
+    .filter(([,d]) => d.lessonDay === studentSortMode)
+    .sort((a,b) => (a[1].display||a[0]).localeCompare(b[1].display||b[0], 'ja'));
+}
+
+
+// ── 曜日設定 ──
+let dayPickerUid = null;
+window.openDayPicker = (uid, display) => {
+  dayPickerUid = uid;
+  document.getElementById('dayPickerTitle').textContent = display + ' さんの曜日設定';
+  document.getElementById('dayPickerOverlay').classList.add('open');
+};
+window.saveLessonDay = async (day) => {
+  if (!dayPickerUid) return;
+  if (day) {
+    await set(ref(db, `students/${dayPickerUid}/lessonDay`), day);
+  } else {
+    await remove(ref(db, `students/${dayPickerUid}/lessonDay`));
+  }
+  closeDayPicker();
+};
+window.closeDayPicker = () => { document.getElementById('dayPickerOverlay').classList.remove('open'); dayPickerUid = null; };
+
+['confirmOverlay','detailOverlay','studentDetailOverlay','historyOverlay','delEntryOverlay','delStudentOverlay','dayPickerOverlay'].forEach(id => {
   document.getElementById(id).addEventListener('click', function(e) { if(e.target===this) this.classList.remove('open'); });
 });
 </script>
