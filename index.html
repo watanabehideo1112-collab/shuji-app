@@ -286,7 +286,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--paper);color:var(--t
         </div>
         <div id="entryList"><div class="loading">読み込み中...</div></div>
         <div class="export-bar">
-          <button class="export-btn-pdf" onclick="exportMyPDF()">📄 PDFで保存</button>
+          <button class="export-btn-pdf" onclick="exportMyPDF()">📄 PDFをDL</button>
           <button class="export-btn-csv" onclick="exportMyCSV()">📊 CSVで保存</button>
         </div>
       </div>
@@ -383,7 +383,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--paper);color:var(--t
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px"><div class="card-head-label">記録ログ</div><button class="graph-btn" id="sdHistoryBtn" onclick="openStudentHistory(this.getAttribute('data-uid'))">📈 昇段グラフ</button></div>
     <div id="sdEntries"></div>
     <div class="export-bar" style="margin-top:1rem;border-top:none;padding:0">
-      <button class="export-btn-pdf" id="sdExportPdfBtn" onclick="exportStudentPDF(this.dataset.uid)">📄 PDFで保存</button>
+      <button class="export-btn-pdf" id="sdExportPdfBtn" onclick="exportStudentPDF(this.dataset.uid)">📄 PDFをDL</button>
       <button class="export-btn-csv" id="sdExportCsvBtn" onclick="exportStudentCSV(this.dataset.uid)">📊 CSVで保存</button>
     </div>
     <button class="modal-close" onclick="closeStudentDetail()">閉じる</button>
@@ -439,6 +439,8 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--paper);color:var(--t
   </div>
 </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getDatabase, ref, set, get, push, onValue, remove } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
@@ -834,79 +836,126 @@ function buildExportData(uid, displayName, data) {
   return lines;
 }
 
-// ── PDF出力（印刷ダイアログ） ──
+// ── PDF直接出力（jsPDF使用） ──
 function makePDFWindow(uid, displayName, data) {
-  // 現在の段位
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
   const ranks = data.ranks || {};
-  const rankRows = ['毛筆','硬筆'].map(g => {
+  const W = 210, margin = 18;
+  let y = margin;
+
+  // ── ヘッダー ──
+  doc.setFillColor(26, 26, 46);
+  doc.rect(0, 0, W, 32, 'F');
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(22);
+  doc.setFont('helvetica', 'bold');
+  doc.text('Shodo Techo', W/2, 13, { align: 'center' });
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(200, 200, 220);
+  doc.text('SHODO TECHO  —  ' + displayName + '  /  ' + new Date().toLocaleDateString('ja-JP'), W/2, 22, { align: 'center' });
+  y = 42;
+
+  // ── 現在の段位 ──
+  doc.setTextColor(100, 100, 130);
+  doc.setFontSize(7);
+  doc.setFont('helvetica', 'bold');
+  doc.text('CURRENT RANK', margin, y);
+  doc.setDrawColor(200, 200, 210);
+  doc.line(margin, y+1.5, W-margin, y+1.5);
+  y += 7;
+
+  ['毛筆', '硬筆'].forEach(g => {
     const cur = ranks[g]?.rank || '未設定';
-    const dt = ranks[g]?.updatedAt ? new Date(ranks[g].updatedAt).toLocaleDateString('ja-JP') : '—';
-    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:0.5px solid #f0ede6">
-      <span style="font-size:12px;color:#6b6b8a">${g}</span>
-      <span style="font-size:18px;font-weight:700;color:#1a1a2e">${cur}</span>
-      <span style="font-size:11px;color:#aaa">${dt} 変更</span>
-    </div>`;
-  }).join('');
+    const dt = ranks[g]?.updatedAt ? new Date(ranks[g].updatedAt).toLocaleDateString('ja-JP') : '';
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(100, 100, 130);
+    doc.text(g, margin, y);
+    doc.setFontSize(13);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(26, 26, 46);
+    doc.text(cur, margin + 16, y);
+    if (dt) {
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(160, 160, 160);
+      doc.text(dt + ' 変更', W - margin, y, { align: 'right' });
+    }
+    y += 8;
+  });
+  y += 4;
 
-  // 昇段履歴
-  const histRows = ['毛筆','硬筆'].flatMap(g => {
+  // ── 昇段履歴 ──
+  const histItems = ['毛筆','硬筆'].flatMap(g => {
     const hist = data.rankHistory?.[g] ? Object.values(data.rankHistory[g]).sort((a,b)=>a.ts-b.ts) : [];
-    return hist.map(h => `<div style="display:flex;gap:10px;align-items:center;padding:4px 0;font-size:12px">
-      <div style="width:8px;height:8px;border-radius:50%;background:${g==='毛筆'?'#667eea':'#43e97b'};flex-shrink:0"></div>
-      <span style="color:#6b6b8a;min-width:36px">${g}</span>
-      <span style="font-weight:500;min-width:72px;color:#1a1a2e">${h.rank}</span>
-      <span style="color:#aaa">${new Date(h.ts).toLocaleDateString('ja-JP')}</span>
-    </div>`);
-  }).join('');
+    return hist.map(h => [g, h.rank, new Date(h.ts).toLocaleDateString('ja-JP')]);
+  });
 
-  // 練習記録
-  const entryRows = ['毛筆','硬筆'].flatMap(g => {
+  if (histItems.length) {
+    doc.setTextColor(100, 100, 130);
+    doc.setFontSize(7);
+    doc.setFont('helvetica', 'bold');
+    doc.text('RANK HISTORY', margin, y);
+    doc.setDrawColor(200, 200, 210);
+    doc.line(margin, y+1.5, W-margin, y+1.5);
+    y += 4;
+    doc.autoTable({
+      startY: y,
+      margin: { left: margin, right: margin },
+      head: [['種別', '段位・級位', '日付']],
+      body: histItems,
+      styles: { fontSize: 8, cellPadding: 2.5, textColor: [40,40,60] },
+      headStyles: { fillColor: [102,126,234], textColor: 255, fontSize: 7, fontStyle: 'bold' },
+      alternateRowStyles: { fillColor: [245,244,250] },
+      columnStyles: { 0: { cellWidth: 20 }, 1: { cellWidth: 40 }, 2: { cellWidth: 35 } },
+    });
+    y = doc.lastAutoTable.finalY + 8;
+  }
+
+  // ── 練習記録 ──
+  const entryItems = ['毛筆','硬筆'].flatMap(g => {
     if (!data.entries?.[g]) return [];
-    return Object.values(data.entries[g]).sort((a,b)=>a.ts-b.ts).map(e =>
-      `<div style="display:flex;gap:8px;padding:5px 0;border-bottom:0.5px solid #f0ede6;font-size:12px">
-        <span style="color:#6b6b8a;min-width:96px;flex-shrink:0">${e.date}</span>
-        <span style="padding:1px 7px;border-radius:99px;font-size:10px;background:${g==='毛筆'?'#eeedfe':'#eaf3de'};color:${g==='毛筆'?'#3C3489':'#27500A'};flex-shrink:0">${g}</span>
-        <span style="color:#444;flex:1">${e.note||'（メモなし）'}</span>
-      </div>`
-    );
-  }).join('');
+    return Object.values(data.entries[g]).sort((a,b)=>a.ts-b.ts).map(e => [g, e.date, e.note||'']);
+  });
 
-  const html = `<!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8">
-    <title>${displayName} 書道手帳</title>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
-    <style>
-      *{box-sizing:border-box;margin:0;padding:0}
-      body{font-family:'Noto Sans JP',sans-serif;background:#faf8f4;padding:2.5rem;color:#1a1a2e;max-width:680px;margin:0 auto}
-      .page-header{text-align:center;border-bottom:2px solid #1a1a2e;padding-bottom:1.25rem;margin-bottom:1.75rem}
-      .kanji{font-family:'Noto Serif JP',serif;font-size:44px;color:#1a1a2e;display:block;line-height:1}
-      .title{font-size:16px;font-weight:700;letter-spacing:.15em;margin-top:6px}
-      .name{font-size:13px;color:#6b6b8a;margin-top:4px}
-      .section{margin-bottom:1.5rem}
-      .section-title{font-size:10px;font-weight:700;letter-spacing:.12em;color:#6b6b8a;border-bottom:0.5px solid #e0ddd6;padding-bottom:4px;margin-bottom:.75rem;text-transform:uppercase}
-      .footer{text-align:center;margin-top:2rem;padding-top:1rem;border-top:0.5px solid #e0ddd6;font-size:10px;color:#aaa}
-      @media print{body{background:#fff;padding:1.5rem}}
-    </style>
-  </head><body>
-    <div class="page-header">
-      <span class="kanji">書</span>
-      <div class="title">書道手帳</div>
-      <div class="name">${displayName} さん　／　エクスポート日: ${new Date().toLocaleDateString('ja-JP')}</div>
-    </div>
-    <div class="section">
-      <div class="section-title">現在の段位・級位</div>
-      ${rankRows}
-    </div>
-    ${histRows ? `<div class="section"><div class="section-title">昇段履歴</div>${histRows}</div>` : ''}
-    <div class="section">
-      <div class="section-title">練習記録</div>
-      ${entryRows || '<div style="font-size:12px;color:#aaa">記録なし</div>'}
-    </div>
-    <div class="footer">書道手帳 — SHODO TECHO</div>
-    <script>window.onload=()=>{window.print()}<\/script>
-  </body></html>`;
-  const w = window.open('', '_blank');
-  w.document.write(html);
-  w.document.close();
+  doc.setTextColor(100, 100, 130);
+  doc.setFontSize(7);
+  doc.setFont('helvetica', 'bold');
+  doc.text('PRACTICE LOG', margin, y);
+  doc.setDrawColor(200, 200, 210);
+  doc.line(margin, y+1.5, W-margin, y+1.5);
+  y += 4;
+
+  if (entryItems.length) {
+    doc.autoTable({
+      startY: y,
+      margin: { left: margin, right: margin },
+      head: [['種別', '日付', 'メモ']],
+      body: entryItems,
+      styles: { fontSize: 8, cellPadding: 2.5, textColor: [40,40,60] },
+      headStyles: { fillColor: [102,126,234], textColor: 255, fontSize: 7, fontStyle: 'bold' },
+      alternateRowStyles: { fillColor: [245,244,250] },
+      columnStyles: { 0: { cellWidth: 20 }, 1: { cellWidth: 30 } },
+    });
+    y = doc.lastAutoTable.finalY + 6;
+  } else {
+    doc.setFontSize(8); doc.setTextColor(160,160,160);
+    doc.text('記録なし', margin, y + 6);
+    y += 12;
+  }
+
+  // ── フッター ──
+  const pageCount = doc.getNumberOfPages();
+  for (let i = 1; i <= pageCount; i++) {
+    doc.setPage(i);
+    doc.setFontSize(7); doc.setTextColor(180,180,180);
+    doc.text('書道手帳 — SHODO TECHO', W/2, 290, { align: 'center' });
+    doc.text(`${i} / ${pageCount}`, W - margin, 290, { align: 'right' });
+  }
+
+  doc.save(displayName + '_書道手帳.pdf');
 }
 
 // ── CSV出力 ──
