@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>書道手帳</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink: #1a1a2e; --ink-light: #2d2d4e;
+  --paper: #faf8f4; --paper-dark: #f0ede6;
+  --gold: #c9a84c; --gold-light: #e8c96a;
+  --purple: #667eea; --purple2: #764ba2;
+  --teal: #43e97b;
+  --text: #1a1a2e; --text-sub: #6b6b8a;
+  --border: rgba(26,26,46,0.1);
+  --radius: 14px; --radius-sm: 8px;
+  --shadow: 0 4px 24px rgba(26,26,46,0.08);
+  --shadow-lg: 0 8px 40px rgba(26,26,46,0.14);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Noto Sans JP',sans-serif;background:var(--paper);color:var(--text);min-height:100vh}
+
+.auth-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(145deg,#667eea 0%,#a855f7 45%,#f093fb 100%);padding:1.5rem}
+.auth-card{background:rgba(255,255,255,.18);border:0.5px solid rgba(255,255,255,.4);border-radius:24px;padding:2.5rem 2rem;width:100%;max-width:360px;backdrop-filter:blur(24px)}
+.auth-logo{text-align:center;margin-bottom:2rem}
+.auth-logo .kanji{font-family:'Noto Serif JP',serif;font-size:26px;font-weight:700;color:#fff;display:block;line-height:1.4;letter-spacing:.06em;text-shadow:0 2px 12px rgba(0,0,0,.12)}
+.auth-logo .sub{font-size:11px;color:rgba(255,255,255,.7);letter-spacing:.2em;margin-top:6px}
+.auth-label{font-size:11px;color:rgba(255,255,255,.8);letter-spacing:.08em;margin-bottom:5px;margin-top:14px}
+.auth-input{width:100%;background:rgba(255,255,255,.22);border:0.5px solid rgba(255,255,255,.5);border-radius:var(--radius-sm);color:#fff;font-size:15px;padding:11px 13px;font-family:'Noto Sans JP',sans-serif;outline:none;transition:all .2s}
+.auth-input:focus{border-color:#fff;background:rgba(255,255,255,.3)}
+.auth-input::placeholder{color:rgba(255,255,255,.5)}
+.auth-btn{width:100%;margin-top:1.5rem;padding:13px;background:#fff;color:var(--purple2);border:none;border-radius:var(--radius-sm);font-size:14px;font-weight:700;font-family:'Noto Sans JP',sans-serif;cursor:pointer;letter-spacing:.05em;box-shadow:0 4px 16px rgba(0,0,0,.12)}
+.auth-btn:hover{opacity:.9}
+.auth-note{margin-top:1rem;font-size:11px;color:rgba(255,255,255,.7);line-height:1.7;text-align:center}
+.auth-teacher-link{margin-top:.875rem;text-align:center;font-size:12px;color:rgba(255,255,255,.6)}
+.auth-teacher-link span{color:#fff;cursor:pointer;text-decoration:underline}
+.auth-error{font-size:12px;color:#ffe0e8;margin-top:8px;text-align:center;min-height:18px}
+.teacher-form{display:none}
+
+.app{display:none}
+.topbar{background:linear-gradient(135deg,var(--ink) 0%,var(--ink-light) 100%);color:#fff;padding:1rem 1.25rem .875rem;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;box-shadow:var(--shadow)}
+.topbar-title{font-family:'Noto Serif JP',serif;font-size:18px;background:linear-gradient(135deg,var(--gold),var(--gold-light));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.topbar-role{font-size:10px;padding:2px 8px;border-radius:99px;letter-spacing:.06em;margin-left:8px}
+.role-teacher{background:rgba(201,168,76,.2);color:var(--gold-light);border:0.5px solid rgba(201,168,76,.3)}
+.role-student{background:rgba(102,126,234,.2);color:#a0b0ff;border:0.5px solid rgba(102,126,234,.3)}
+.logout-btn{font-size:12px;color:rgba(255,255,255,.4);background:none;border:none;cursor:pointer;padding:4px 8px}
+.logout-btn:hover{color:rgba(255,255,255,.8)}
+
+.main{max-width:680px;margin:0 auto;padding:1.25rem 1rem 4rem}
+
+.hero-card{border-radius:20px;padding:1.5rem;margin-bottom:1rem;position:relative;overflow:hidden;color:#fff}
+.hero-card.genre-毛筆{background:linear-gradient(135deg,#667eea 0%,#764ba2 60%,#f093fb 100%)}
+.hero-card.genre-硬筆{background:linear-gradient(135deg,#134e5e 0%,#43e97b 100%)}
+.hero-card::before{content:'';position:absolute;top:-50px;right:-50px;width:180px;height:180px;border-radius:50%;background:rgba(255,255,255,.07)}
+.hero-card::after{content:'';position:absolute;bottom:-30px;left:10px;width:110px;height:110px;border-radius:50%;background:rgba(255,255,255,.05)}
+.hero-label{font-size:10px;opacity:.7;letter-spacing:.12em;margin-bottom:5px}
+.hero-rank-name{font-family:'Noto Serif JP',serif;font-size:44px;font-weight:700;letter-spacing:-1px;line-height:1}
+.hero-date{font-size:11px;opacity:.6;margin-top:8px}
+.hero-genre-badge{position:absolute;top:14px;right:14px;font-size:11px;background:rgba(255,255,255,.18);padding:3px 11px;border-radius:99px;backdrop-filter:blur(4px)}
+
+.genre-tabs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:1rem}
+.genre-tab{padding:10px;text-align:center;font-size:13px;font-weight:500;border-radius:var(--radius-sm);border:none;cursor:pointer;font-family:'Noto Sans JP',sans-serif;transition:opacity .15s}
+.genre-tab.毛筆{background:linear-gradient(135deg,var(--purple),var(--purple2));color:#fff}
+.genre-tab.硬筆{background:linear-gradient(135deg,#134e5e,var(--teal));color:#fff}
+.genre-tab.inactive{opacity:.38;filter:grayscale(.4)}
+
+.card{background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;margin-bottom:1rem;border:0.5px solid var(--border)}
+.card-head{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-bottom:0.5px solid var(--border)}
+.card-head-label{font-size:10px;font-weight:700;color:var(--text-sub);letter-spacing:.1em;text-transform:uppercase}
+.small-btn{font-size:11px;padding:3px 10px;border-radius:99px;border:0.5px solid var(--border);background:var(--paper);cursor:pointer;color:var(--text-sub);font-family:'Noto Sans JP',sans-serif}
+.small-btn:hover{background:var(--paper-dark)}
+
+.rank-pills{display:flex;flex-wrap:wrap;gap:5px;padding:10px 16px 14px}
+.rpill{padding:4px 11px;font-size:12px;border-radius:99px;border:0.5px solid var(--border);cursor:pointer;background:var(--paper);color:var(--text-sub);transition:all .12s;font-family:'Noto Sans JP',sans-serif}
+.rpill:hover{background:var(--paper-dark)}
+.rpill.cur-毛筆{background:linear-gradient(135deg,var(--purple),var(--purple2));color:#fff;border-color:transparent;font-weight:700}
+.rpill.cur-硬筆{background:linear-gradient(135deg,#134e5e,var(--teal));color:#fff;border-color:transparent;font-weight:700}
+
+.form-body{padding:14px 16px}
+.fg{margin-bottom:10px}
+.fg label{display:block;font-size:11px;color:var(--text-sub);margin-bottom:4px;letter-spacing:.04em}
+.fg input,.fg textarea{width:100%;border:0.5px solid var(--border);border-radius:var(--radius-sm);padding:9px 11px;font-size:13px;font-family:'Noto Sans JP',sans-serif;background:var(--paper);color:var(--text);outline:none;transition:border-color .2s}
+.fg input:focus,.fg textarea:focus{border-color:var(--purple)}
+.fg textarea{resize:vertical;min-height:60px}
+
+.photo-drop{border:1.5px dashed var(--border);border-radius:var(--radius-sm);padding:.875rem;text-align:center;cursor:pointer;color:var(--text-sub);font-size:13px;margin-bottom:8px;transition:background .15s;line-height:1.6}
+.photo-drop:hover{background:var(--paper-dark)}
+.previews{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+.prev-wrap{position:relative;width:72px;height:72px}
+.prev-wrap img{width:72px;height:72px;object-fit:cover;border-radius:8px;border:0.5px solid var(--border)}
+.prev-del{position:absolute;top:-5px;right:-5px;width:18px;height:18px;border-radius:50%;background:var(--ink);color:#fff;border:none;font-size:11px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+
+.save-btn{background:linear-gradient(135deg,var(--purple),var(--purple2));color:#fff;border:none;border-radius:var(--radius-sm);padding:9px 22px;font-size:13px;font-weight:700;font-family:'Noto Sans JP',sans-serif;cursor:pointer;transition:opacity .2s}
+.save-btn:hover{opacity:.88}
+.save-btn.genre-硬筆{background:linear-gradient(135deg,#134e5e,var(--teal))}
+
+.entry-item{display:flex;align-items:flex-start;gap:11px;padding:11px 16px;border-bottom:0.5px solid var(--border);cursor:pointer;transition:background .1s}
+.entry-item:last-child{border-bottom:none}
+.entry-item:hover{background:var(--paper)}
+.entry-thumb-wrap{display:flex;gap:3px;flex-shrink:0}
+.entry-thumb{width:52px;height:52px;object-fit:cover;border-radius:8px;border:0.5px solid var(--border)}
+.entry-icon{width:52px;height:52px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;background:linear-gradient(135deg,rgba(102,126,234,.08),rgba(118,75,162,.08))}
+.entry-meta{flex:1;min-width:0}
+.entry-date{font-size:12px;color:var(--text-sub);margin-bottom:2px}
+.entry-note{font-size:13px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.entry-sub{font-size:11px;color:var(--text-sub);margin-top:2px}
+.empty{text-align:center;padding:2.5rem;color:var(--text-sub);font-size:13px}
+.loading{text-align:center;padding:2rem;color:var(--text-sub);font-size:13px}
+
+.view-tabs{display:flex;gap:6px;margin-bottom:1rem}
+.view-tab{flex:1;padding:8px;text-align:center;font-size:13px;font-weight:500;border-radius:var(--radius-sm);border:0.5px solid var(--border);cursor:pointer;background:var(--paper);color:var(--text-sub);font-family:'Noto Sans JP',sans-serif;transition:all .15s}
+.view-tab.active{background:var(--ink);color:#fff;border-color:transparent}
+.student-card{padding:12px 16px;border-bottom:0.5px solid var(--border);cursor:pointer;transition:background .1s}
+.student-card:last-child{border-bottom:none}
+.student-card:hover{background:var(--paper)}
+.student-name{font-size:14px;font-weight:500;margin-bottom:4px}
+.student-ranks{display:flex;gap:6px;flex-wrap:wrap}
+.student-rank-badge{font-size:11px;padding:2px 9px;border-radius:99px}
+.badge-毛筆{background:rgba(102,126,234,.12);color:var(--purple2)}
+.badge-硬筆{background:rgba(67,233,123,.12);color:#0d6e3d}
+.student-updated{font-size:11px;color:var(--text-sub);margin-top:4px}
+
+.overlay{display:none;position:fixed;inset:0;background:rgba(26,26,46,.55);z-index:200;align-items:center;justify-content:center;padding:1rem;backdrop-filter:blur(4px)}
+.overlay.open{display:flex}
+.modal{background:#fff;border-radius:20px;width:100%;max-width:400px;padding:1.75rem;box-shadow:var(--shadow-lg)}
+.modal-icon{width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,var(--purple),var(--purple2));display:flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:1rem}
+.modal h3{font-size:16px;font-weight:700;margin-bottom:.5rem}
+.modal p{font-size:13px;color:var(--text-sub);line-height:1.7;margin-bottom:1rem}
+.modal-change{font-size:15px;font-weight:700;padding:10px 14px;background:var(--paper);border-radius:var(--radius-sm);margin-bottom:1rem;border:0.5px solid var(--border)}
+.modal-btns{display:flex;gap:8px}
+.modal-ok{flex:1;background:linear-gradient(135deg,var(--purple),var(--purple2));color:#fff;border:none;border-radius:var(--radius-sm);padding:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:'Noto Sans JP',sans-serif}
+.modal-ok:hover{opacity:.9}
+.modal-cancel{flex:1;background:transparent;color:var(--text-sub);border:0.5px solid var(--border);border-radius:var(--radius-sm);padding:10px;font-size:13px;cursor:pointer;font-family:'Noto Sans JP',sans-serif}
+.modal-cancel:hover{background:var(--paper)}
+.modal-close{width:100%;margin-top:1rem;padding:10px;border:0.5px solid var(--border);background:transparent;border-radius:var(--radius-sm);cursor:pointer;font-size:13px;color:var(--text-sub);font-family:'Noto Sans JP',sans-serif}
+.modal-close:hover{background:var(--paper)}
+.detail-modal{max-width:480px;max-height:88vh;overflow-y:auto}
+.detail-photos{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:1rem}
+.dphoto-1{width:100%;max-height:320px;object-fit:contain;border-radius:var(--radius-sm);border:0.5px solid var(--border)}
+.dphoto-n{width:calc(50% - 3px);object-fit:cover;border-radius:var(--radius-sm);border:0.5px solid var(--border)}
+
+/* ── 昇段グラフ ── */
+.history-modal{max-width:560px;max-height:90vh;overflow-y:auto}
+.history-genre-tabs{display:flex;gap:6px;margin-bottom:1rem}
+.hgtab{flex:1;padding:7px;text-align:center;font-size:12px;font-weight:500;border-radius:var(--radius-sm);border:0.5px solid var(--border);cursor:pointer;background:var(--paper);color:var(--text-sub);font-family:'Noto Sans JP',sans-serif;transition:all .15s}
+.hgtab.active-毛筆{background:linear-gradient(135deg,var(--purple),var(--purple2));color:#fff;border-color:transparent}
+.hgtab.active-硬筆{background:linear-gradient(135deg,#134e5e,var(--teal));color:#fff;border-color:transparent}
+.graph-wrap{width:100%;overflow-x:auto;margin-bottom:1rem}
+.graph-svg{display:block}
+.history-list{margin-top:.5rem}
+.history-row{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:0.5px solid var(--border);font-size:13px}
+.history-row:last-child{border-bottom:none}
+.history-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.history-rank{font-weight:500;min-width:80px}
+.history-date{font-size:11px;color:var(--text-sub)}
+.no-history{text-align:center;padding:2rem;color:var(--text-sub);font-size:13px}
+.graph-btn{font-size:12px;padding:3px 10px;border-radius:99px;border:0.5px solid var(--border);background:var(--paper);cursor:pointer;color:var(--text-sub);font-family:'Noto Sans JP',sans-serif;margin-left:8px}
+.graph-btn:hover{background:var(--paper-dark)}
+.detail-row{display:flex;gap:10px;font-size:13px;margin-bottom:6px}
+.detail-label{color:var(--text-sub);min-width:60px;flex-shrink:0}
+.detail-val{color:var(--text);flex:1;line-height:1.6}
+</style>
+</head>
+<body>
+
+<!-- AUTH -->
+<div class="auth-screen" id="authScreen">
+  <div class="auth-card">
+    <div class="auth-logo">
+      <span class="kanji">書道手帳</span>
+      <span class="sub">SHODO TECHO</span>
+    </div>
+    <div id="authError" class="auth-error"></div>
+
+    <div id="studentForm">
+      <div class="auth-label">あなたのお名前</div>
+      <input class="auth-input" id="studentName" placeholder="例: 山田花子" />
+      <button class="auth-btn" onclick="loginAsStudent()">はじめる</button>
+      <div class="auth-note">名前を入力するだけでOK！<br>次回から自動でログインします📱</div>
+      <div class="auth-teacher-link">先生の方は <span onclick="showTeacherForm()">こちら</span></div>
+    </div>
+
+    <div class="teacher-form" id="teacherForm">
+      <div class="auth-label">先生パスワード</div>
+      <input class="auth-input" id="teacherPass" type="password" placeholder="パスワード" />
+      <button class="auth-btn" onclick="loginAsTeacher()">先生としてログイン</button>
+      <div class="auth-teacher-link"><span onclick="showStudentForm()">← 生徒ログインに戻る</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- APP -->
+<div class="app" id="appScreen">
+  <div class="topbar">
+    <div style="display:flex;align-items:center">
+      <span class="topbar-title">書道手帳</span>
+      <span class="topbar-role" id="topRole"></span>
+    </div>
+    <div style="display:flex;align-items:center;gap:6px">
+      <span style="font-size:12px;color:rgba(255,255,255,.4)" id="topName"></span>
+      <button class="logout-btn" onclick="logout()">ログアウト</button>
+    </div>
+  </div>
+  <div class="main">
+
+    <!-- 生徒 -->
+    <div id="studentView">
+      <div class="genre-tabs">
+        <button class="genre-tab 毛筆" id="stab-毛筆" onclick="switchGenre('毛筆')">🖌 毛筆 習字</button>
+        <button class="genre-tab 硬筆 inactive" id="stab-硬筆" onclick="switchGenre('硬筆')">✏️ 硬筆</button>
+      </div>
+      <div class="hero-card genre-毛筆" id="heroCard">
+        <div class="hero-genre-badge" id="heroBadge">毛筆</div>
+        <div class="hero-label">現在の段位・級位</div>
+        <div class="hero-rank-name" id="heroRankName">—</div>
+        <div class="hero-date" id="heroDate">変更日時: —</div>
+      </div>
+      <div class="card">
+        <div class="card-head">
+          <span class="card-head-label">段位・級位</span>
+          <div style="display:flex;gap:6px"><button class="small-btn" id="rankToggleBtn" onclick="toggleRankList()">一覧を表示</button><button class="small-btn" onclick="openMyHistory()">📈 履歴</button></div>
+        </div>
+        <div id="rankListWrap" style="display:none;border-top:0.5px solid var(--border)">
+          <div class="rank-pills" id="rankPills"></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head"><span class="card-head-label">記録を追加</span></div>
+        <div class="form-body">
+          <div class="fg">
+            <label>日付</label>
+            <input type="date" id="fDate" />
+          </div>
+          <div class="fg">
+            <label>メモ（任意）</label>
+            <textarea id="fNote" placeholder="練習内容、気づき、課題など..."></textarea>
+          </div>
+          <div class="photo-drop" onclick="document.getElementById('photoIn').click()">
+            📷 今日の一枚を追加（複数可）<br>
+            <span style="font-size:11px;opacity:.65">写真はこのスマホにだけ保存されます</span>
+            <input type="file" id="photoIn" accept="image/*" multiple style="display:none" onchange="handlePhotos(event)" />
+          </div>
+          <div class="previews" id="previews"></div>
+          <button class="save-btn genre-毛筆" id="saveBtn" onclick="addEntry()">保存する</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head"><span class="card-head-label">記録ログ</span></div>
+        <div id="entryList"><div class="loading">読み込み中...</div></div>
+      </div>
+    </div>
+
+    <!-- 先生 -->
+    <div id="teacherView" style="display:none">
+      <div class="view-tabs">
+        <div class="view-tab active" onclick="switchTeacherTab('students')">生徒一覧</div>
+        <div class="view-tab" onclick="switchTeacherTab('feed')">最新記録</div>
+      </div>
+      <div id="teacherStudents">
+        <div class="card">
+          <div class="card-head"><span class="card-head-label">生徒一覧</span></div>
+          <div id="studentList"><div class="loading">読み込み中...</div></div>
+        </div>
+      </div>
+      <div id="teacherFeed" style="display:none">
+        <div class="card">
+          <div class="card-head"><span class="card-head-label">最新の記録（全生徒）</span></div>
+          <div id="feedList"><div class="loading">読み込み中...</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 段位確認モーダル -->
+<div class="overlay" id="confirmOverlay">
+  <div class="modal">
+    <div class="modal-icon">🖌</div>
+    <h3>段位・級位を変更しますか？</h3>
+    <div class="modal-change" id="confirmMsg"></div>
+    <p>変更した日時が記録され、先生にもリアルタイムで反映されます。</p>
+    <div class="modal-btns">
+      <button class="modal-ok" onclick="confirmRankChange()">変更する</button>
+      <button class="modal-cancel" onclick="closeConfirm()">キャンセル</button>
+    </div>
+  </div>
+</div>
+
+<!-- 記録詳細モーダル -->
+<div class="overlay" id="detailOverlay">
+  <div class="modal detail-modal">
+    <h3 id="dTitle"></h3>
+    <div class="detail-photos" id="dPhotos"></div>
+    <div id="dDetails"></div>
+    <button class="modal-close" onclick="closeDetail()">閉じる</button>
+  </div>
+</div>
+
+<!-- 昇段履歴グラフモーダル -->
+<div class="overlay" id="historyOverlay">
+  <div class="modal history-modal">
+    <h3 id="historyTitle">昇段履歴</h3>
+    <div class="history-genre-tabs" style="margin-top:.75rem">
+      <div class="hgtab active-毛筆" id="hgtab-毛筆" onclick="switchHistoryGenre('毛筆')">🖌 毛筆</div>
+      <div class="hgtab" id="hgtab-硬筆" onclick="switchHistoryGenre('硬筆')">✏️ 硬筆</div>
+    </div>
+    <div class="graph-wrap"><svg class="graph-svg" id="historySvg" width="500" height="220"></svg></div>
+    <div class="history-list" id="historyList"></div>
+    <button class="modal-close" onclick="closeHistory()">閉じる</button>
+  </div>
+</div>
+
+<!-- 生徒詳細モーダル（先生用） -->
+<div class="overlay" id="studentDetailOverlay">
+  <div class="modal detail-modal" style="max-width:520px">
+    <h3 id="sdTitle"></h3>
+    <div id="sdRanks" style="margin-bottom:1rem;display:flex;gap:6px;flex-wrap:wrap"></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px"><div class="card-head-label">記録ログ</div><button class="graph-btn" id="sdHistoryBtn" onclick="openStudentHistory(this.getAttribute('data-uid'))">📈 昇段グラフ</button></div>
+    <div id="sdEntries"></div>
+    <button class="modal-close" onclick="closeStudentDetail()">閉じる</button>
+  </div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getDatabase, ref, set, get, push, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyD2-7r-SZz4uQBHRRQdXqvkqp3rAH3bIVs",
+  authDomain: "syuji-app.firebaseapp.com",
+  databaseURL: "https://syuji-app-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "syuji-app",
+  storageBucket: "syuji-app.firebasestorage.app",
+  messagingSenderId: "740389740949",
+  appId: "1:740389740949:web:896d34bec4645b27dd569c"
+};
+
+const fbApp = initializeApp(firebaseConfig);
+const db = getDatabase(fbApp);
+
+const RANKS = ['10級','9級','8級','7級','6級','5級','4級','3級','2級','1級','特級','準初段','初段','準2段','2段','準3段','3段','準4段','4段','準5段','5段','準6段','6段','準7段','7段','準8段','8段','準9段','9段','準10段','10段','準優待生','優待生','準特待生','特待生'];
+const TEACHER_PASS = 'shodo2024';
+const LS_USER = 'shuji_user';
+const LS_PHOTOS = 'shuji_photos';
+
+let currentUser = null, currentGenre = '毛筆', pendingRank = null, pendingPhotos = [], unsubFns = [];
+
+// 写真ローカル管理
+function savePhotoLocal(uid, genre, key, photos) {
+  if (!photos.length) return;
+  try {
+    const store = JSON.parse(localStorage.getItem(LS_PHOTOS) || '{}');
+    store[`${uid}_${genre}_${key}`] = photos;
+    localStorage.setItem(LS_PHOTOS, JSON.stringify(store));
+  } catch(e) { alert('写真の保存に失敗しました。ストレージ容量をご確認ください。'); }
+}
+function getPhotoLocal(uid, genre, key) {
+  const store = JSON.parse(localStorage.getItem(LS_PHOTOS) || '{}');
+  return store[`${uid}_${genre}_${key}`] || [];
+}
+
+function today() { return new Date().toISOString().slice(0,10); }
+function fmtDT(ts) {
+  if (!ts) return '—';
+  const d = new Date(ts);
+  return `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日 ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+}
+function safeId(n) { return n.trim().replace(/[^\w\u3040-\u9fff]/g,'_').slice(0,30) || 'user'; }
+
+// AUTH
+window.showTeacherForm = () => {
+  document.getElementById('studentForm').style.display = 'none';
+  document.getElementById('teacherForm').style.display = 'block';
+  document.getElementById('authError').textContent = '';
+};
+window.showStudentForm = () => {
+  document.getElementById('teacherForm').style.display = 'none';
+  document.getElementById('studentForm').style.display = 'block';
+  document.getElementById('authError').textContent = '';
+};
+
+window.loginAsStudent = async () => {
+  const name = document.getElementById('studentName').value.trim();
+  if (!name) { document.getElementById('authError').textContent = 'お名前を入力してください'; return; }
+  const uid = safeId(name);
+  const snap = await get(ref(db, `students/${uid}/display`));
+  if (!snap.exists()) await set(ref(db, `students/${uid}/display`), name);
+  currentUser = { id: uid, display: name, isTeacher: false };
+  localStorage.setItem(LS_USER, JSON.stringify(currentUser));
+  startApp();
+};
+
+window.loginAsTeacher = () => {
+  if (document.getElementById('teacherPass').value !== TEACHER_PASS) {
+    document.getElementById('authError').textContent = 'パスワードが違います'; return;
+  }
+  currentUser = { id: 'sensei', display: '先生', isTeacher: true };
+  startApp();
+};
+
+window.logout = () => {
+  unsubFns.forEach(f => f()); unsubFns = [];
+  currentUser = null;
+  localStorage.removeItem(LS_USER);
+  document.getElementById('appScreen').style.display = 'none';
+  document.getElementById('authScreen').style.display = 'flex';
+  document.getElementById('studentName').value = '';
+  document.getElementById('teacherPass').value = '';
+  document.getElementById('authError').textContent = '';
+  showStudentForm();
+};
+
+function startApp() {
+  document.getElementById('authScreen').style.display = 'none';
+  document.getElementById('appScreen').style.display = 'block';
+  document.getElementById('fDate').value = today();
+  document.getElementById('topName').textContent = currentUser.display;
+  if (currentUser.isTeacher) {
+    document.getElementById('topRole').textContent = '先生';
+    document.getElementById('topRole').className = 'topbar-role role-teacher';
+    document.getElementById('studentView').style.display = 'none';
+    document.getElementById('teacherView').style.display = 'block';
+    listenTeacher();
+  } else {
+    document.getElementById('topRole').textContent = '生徒';
+    document.getElementById('topRole').className = 'topbar-role role-student';
+    document.getElementById('studentView').style.display = 'block';
+    document.getElementById('teacherView').style.display = 'none';
+    switchGenre('毛筆');
+    listenStudent();
+  }
+}
+
+// 自動ログイン
+try {
+  const saved = localStorage.getItem(LS_USER);
+  if (saved) {
+    const u = JSON.parse(saved);
+    if (u && u.id && !u.isTeacher) { currentUser = u; startApp(); }
+  }
+} catch(e) { localStorage.removeItem(LS_USER); }
+
+// 生徒リスナー
+function listenStudent() {
+  const uid = currentUser.id;
+  unsubFns.push(onValue(ref(db, `students/${uid}/ranks`), snap => {
+    const d = snap.val() || {};
+    renderHero(d); renderRankPills(d);
+  }));
+  ['毛筆','硬筆'].forEach(g => {
+    unsubFns.push(onValue(ref(db, `students/${uid}/entries/${g}`), snap => {
+      if (currentGenre === g) renderEntries(snap.val());
+    }));
+  });
+}
+
+window.switchGenre = (genre) => {
+  currentGenre = genre;
+  ['毛筆','硬筆'].forEach(g => document.getElementById('stab-'+g)?.classList.toggle('inactive', g !== genre));
+  document.getElementById('heroCard').className = 'hero-card genre-' + genre;
+  document.getElementById('heroBadge').textContent = genre;
+  document.getElementById('saveBtn').className = 'save-btn genre-' + genre;
+  document.getElementById('rankListWrap').style.display = 'none';
+  document.getElementById('rankToggleBtn').textContent = '一覧を表示';
+  const uid = currentUser.id;
+  get(ref(db, `students/${uid}/ranks`)).then(s => { renderHero(s.val()||{}); renderRankPills(s.val()||{}); });
+  get(ref(db, `students/${uid}/entries/${genre}`)).then(s => renderEntries(s.val()));
+};
+
+function renderHero(data) {
+  const info = data[currentGenre] || {};
+  document.getElementById('heroRankName').textContent = info.rank || '未設定';
+  document.getElementById('heroDate').textContent = '変更日時: ' + fmtDT(info.updatedAt);
+}
+
+function renderRankPills(data) {
+  const cur = (data[currentGenre] || {}).rank;
+  document.getElementById('rankPills').innerHTML = RANKS.map(r =>
+    `<span class="rpill${r===cur?' cur-'+currentGenre:''}" onclick="askRankChange('${r}')">${r}</span>`
+  ).join('');
+}
+
+function renderEntries(data) {
+  const list = document.getElementById('entryList');
+  const uid = currentUser.id, genre = currentGenre;
+  if (!data) { list.innerHTML = '<div class="empty">記録がありません</div>'; return; }
+  const items = Object.entries(data).sort((a,b) => b[1].ts - a[1].ts);
+  if (!items.length) { list.innerHTML = '<div class="empty">記録がありません</div>'; return; }
+  list.innerHTML = items.map(([key, e]) => {
+    const photos = getPhotoLocal(uid, genre, key);
+    const thumbs = photos.length
+      ? photos.slice(0,2).map(s => `<img class="entry-thumb" src="${s}">`).join('')
+      : `<div class="entry-icon">${genre==='毛筆'?'🖌':'✏️'}</div>`;
+    return `<div class="entry-item" onclick="openDetail('${key}','${e.date}','${encodeURIComponent(e.note||'')}')">
+      <div class="entry-thumb-wrap">${thumbs}</div>
+      <div class="entry-meta">
+        <div class="entry-date">${e.date}</div>
+        <div class="entry-note">${e.note||'(メモなし)'}</div>
+        ${photos.length>1?`<div class="entry-sub">写真 ${photos.length}枚</div>`:''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+window.toggleRankList = () => {
+  const w = document.getElementById('rankListWrap'), btn = document.getElementById('rankToggleBtn');
+  const open = w.style.display === 'none';
+  w.style.display = open ? 'block' : 'none';
+  btn.textContent = open ? '一覧を閉じる' : '一覧を表示';
+};
+
+window.askRankChange = (rank) => {
+  get(ref(db, `students/${currentUser.id}/ranks/${currentGenre}`)).then(snap => {
+    const cur = (snap.val()||{}).rank || '未設定';
+    if (rank === cur) return;
+    pendingRank = rank;
+    document.getElementById('confirmMsg').textContent = `「${cur}」 → 「${rank}」`;
+    document.getElementById('confirmOverlay').classList.add('open');
+  });
+};
+window.confirmRankChange = async () => {
+  if (!pendingRank) return;
+  const ts = Date.now();
+  await set(ref(db, `students/${currentUser.id}/ranks/${currentGenre}`), { rank: pendingRank, updatedAt: ts });
+  // 昇段履歴を追記
+  await push(ref(db, `students/${currentUser.id}/rankHistory/${currentGenre}`), { rank: pendingRank, ts });
+  pendingRank = null; closeConfirm();
+};
+window.closeConfirm = () => { document.getElementById('confirmOverlay').classList.remove('open'); pendingRank = null; };
+
+// 写真
+window.handlePhotos = (e) => {
+  [...e.target.files].forEach(file => {
+    const r = new FileReader();
+    r.onload = ev => { pendingPhotos.push(ev.target.result); renderPreviews(); };
+    r.readAsDataURL(file);
+  });
+  e.target.value = '';
+};
+function renderPreviews() {
+  document.getElementById('previews').innerHTML = pendingPhotos.map((s,i) =>
+    `<div class="prev-wrap"><img src="${s}"><button class="prev-del" onclick="removePhoto(${i})">×</button></div>`
+  ).join('');
+}
+window.removePhoto = (i) => { pendingPhotos.splice(i,1); renderPreviews(); };
+
+window.addEntry = async () => {
+  const date = document.getElementById('fDate').value || today();
+  const note = document.getElementById('fNote').value.trim();
+  const newRef = await push(ref(db, `students/${currentUser.id}/entries/${currentGenre}`), { date, note, ts: Date.now() });
+  if (pendingPhotos.length) savePhotoLocal(currentUser.id, currentGenre, newRef.key, [...pendingPhotos]);
+  pendingPhotos = []; renderPreviews();
+  document.getElementById('fNote').value = '';
+};
+
+window.openDetail = (key, date, noteEnc) => {
+  const note = decodeURIComponent(noteEnc);
+  const photos = getPhotoLocal(currentUser.id, currentGenre, key);
+  document.getElementById('dTitle').textContent = date;
+  const ph = document.getElementById('dPhotos');
+  if (photos.length === 1) ph.innerHTML = `<img class="dphoto-1" src="${photos[0]}">`;
+  else if (photos.length > 1) ph.innerHTML = photos.map(s => `<img class="dphoto-n" src="${s}">`).join('');
+  else ph.innerHTML = '';
+  document.getElementById('dDetails').innerHTML = note
+    ? `<div class="detail-row"><span class="detail-label">メモ</span><span class="detail-val">${note}</span></div>`
+    : '<div style="color:var(--text-sub);font-size:13px">メモなし</div>';
+  document.getElementById('detailOverlay').classList.add('open');
+};
+window.closeDetail = () => document.getElementById('detailOverlay').classList.remove('open');
+
+// 先生
+function listenTeacher() {
+  unsubFns.push(onValue(ref(db, 'students'), snap => {
+    const data = snap.val() || {};
+    renderStudentList(data); renderFeed(data);
+  }));
+}
+
+function getLatestTs(d) {
+  let ts = 0;
+  ['毛筆','硬筆'].forEach(g => {
+    if (d.ranks?.[g]?.updatedAt > ts) ts = d.ranks[g].updatedAt;
+    if (d.entries?.[g]) Object.values(d.entries[g]).forEach(e => { if (e.ts > ts) ts = e.ts; });
+  });
+  return ts || null;
+}
+
+function renderStudentList(data) {
+  const list = document.getElementById('studentList');
+  const entries = Object.entries(data);
+  if (!entries.length) { list.innerHTML = '<div class="empty">まだ生徒の記録がありません</div>'; return; }
+  list.innerHTML = entries.map(([uid, d]) => {
+    const ranks = d.ranks || {};
+    const display = d.display || uid;
+    const badges = ['毛筆','硬筆'].map(g =>
+      ranks[g]?.rank ? `<span class="student-rank-badge badge-${g}">${g}: ${ranks[g].rank}</span>` : ''
+    ).filter(Boolean).join('');
+    const latest = getLatestTs(d);
+    return `<div class="student-card" onclick="openStudentDetail('${uid}')">
+      <div class="student-name">${display}</div>
+      <div class="student-ranks">${badges||'<span style="font-size:12px;color:var(--text-sub)">段位未設定</span>'}</div>
+      ${latest?`<div class="student-updated">最終更新: ${fmtDT(latest)}</div>`:''}
+    </div>`;
+  }).join('');
+}
+
+function renderFeed(data) {
+  const list = document.getElementById('feedList');
+  let all = [];
+  Object.entries(data).forEach(([uid, d]) => {
+    ['毛筆','硬筆'].forEach(g => {
+      if (d.entries?.[g]) Object.values(d.entries[g]).forEach(e => all.push({...e, display: d.display||uid, genre: g}));
+    });
+  });
+  all.sort((a,b) => b.ts - a.ts);
+  if (!all.length) { list.innerHTML = '<div class="empty">まだ記録がありません</div>'; return; }
+  list.innerHTML = all.slice(0,60).map(e =>
+    `<div class="entry-item" style="cursor:default">
+      <div class="entry-icon">${e.genre==='毛筆'?'🖌':'✏️'}</div>
+      <div class="entry-meta">
+        <div class="entry-date">${e.date} <span style="font-size:10px;background:rgba(102,126,234,.1);color:var(--purple2);padding:1px 6px;border-radius:99px;margin-left:4px">${e.genre}</span></div>
+        <div class="entry-note">${e.note||'(メモなし)'}</div>
+        <div class="entry-sub">👤 ${e.display}</div>
+      </div>
+    </div>`
+  ).join('');
+}
+
+window.switchTeacherTab = (tab) => {
+  document.querySelectorAll('.view-tab').forEach((t,i) => t.classList.toggle('active', ['students','feed'][i]===tab));
+  document.getElementById('teacherStudents').style.display = tab==='students' ? 'block' : 'none';
+  document.getElementById('teacherFeed').style.display = tab==='feed' ? 'block' : 'none';
+};
+
+window.openStudentDetail = async (uid) => {
+  const snap = await get(ref(db, `students/${uid}`));
+  const d = snap.val() || {};
+  document.getElementById('sdTitle').textContent = (d.display||uid) + ' さん';
+  document.getElementById('sdHistoryBtn').setAttribute('data-uid', uid);
+  const ranks = d.ranks || {};
+  document.getElementById('sdRanks').innerHTML = ['毛筆','硬筆'].map(g =>
+    `<span class="student-rank-badge badge-${g}" style="font-size:13px;padding:4px 12px">
+      ${g}: ${ranks[g]?.rank||'未設定'}
+      ${ranks[g]?.updatedAt?`<span style="font-size:10px;opacity:.6;margin-left:4px">${fmtDT(ranks[g].updatedAt)}</span>`:''}
+    </span>`
+  ).join('');
+  let all = [];
+  ['毛筆','硬筆'].forEach(g => {
+    if (d.entries?.[g]) Object.values(d.entries[g]).forEach(e => all.push({...e, genre:g}));
+  });
+  all.sort((a,b) => b.ts - a.ts);
+  // 先生には写真を表示しない
+  document.getElementById('sdEntries').innerHTML = all.length
+    ? all.map(e => `<div class="entry-item" style="padding:8px 0;cursor:default">
+        <div class="entry-icon" style="width:36px;height:36px;font-size:16px">${e.genre==='毛筆'?'🖌':'✏️'}</div>
+        <div class="entry-meta">
+          <div class="entry-date">${e.date} · ${e.genre}</div>
+          <div class="entry-note">${e.note||'(メモなし)'}</div>
+        </div>
+      </div>`).join('')
+    : '<div style="color:var(--text-sub);font-size:13px;padding:.5rem 0">記録がありません</div>';
+  document.getElementById('studentDetailOverlay').classList.add('open');
+};
+window.closeStudentDetail = () => document.getElementById('studentDetailOverlay').classList.remove('open');
+
+
+// ── 昇段履歴グラフ ──
+let historyData = {}, historyUid = null, historyGenre = '毛筆';
+
+window.openMyHistory = async () => {
+  historyUid = currentUser.id;
+  document.getElementById('historyTitle').textContent = '昇段履歴';
+  await loadAndShowHistory(historyUid, '毛筆');
+  document.getElementById('historyOverlay').classList.add('open');
+};
+
+window.openStudentHistory = async (uid) => {
+  historyUid = uid;
+  const snap = await get(ref(db, `students/${uid}/display`));
+  document.getElementById('historyTitle').textContent = (snap.val()||uid) + ' さんの昇段履歴';
+  await loadAndShowHistory(uid, '毛筆');
+  document.getElementById('historyOverlay').classList.add('open');
+};
+
+async function loadAndShowHistory(uid, genre) {
+  historyGenre = genre;
+  ['毛筆','硬筆'].forEach(g => {
+    const tab = document.getElementById('hgtab-'+g);
+    tab.className = 'hgtab' + (g === genre ? ' active-'+genre : '');
+  });
+  const snap = await get(ref(db, `students/${uid}/rankHistory/${genre}`));
+  const raw = snap.val() || {};
+  // currentのrankも最初のエントリとして扱う
+  const rankSnap = await get(ref(db, `students/${uid}/ranks/${genre}`));
+  const curRank = rankSnap.val();
+  let items = Object.values(raw).sort((a,b) => a.ts - b.ts);
+  // 現在rankがhistoryにない場合は補完しない（push済みのはず）
+  historyData[genre] = items;
+  renderHistoryGraph(items, genre);
+  renderHistoryList(items, genre);
+}
+
+window.switchHistoryGenre = async (genre) => {
+  await loadAndShowHistory(historyUid, genre);
+};
+
+function rankIndex(r) { return RANKS.indexOf(r); }
+
+function renderHistoryGraph(items, genre) {
+  const svg = document.getElementById('historySvg');
+  const W = Math.min(500, window.innerWidth - 80);
+  const H = 220;
+  svg.setAttribute('width', W);
+  svg.setAttribute('height', H);
+
+  if (!items.length) {
+    svg.innerHTML = `<text x="${W/2}" y="${H/2}" text-anchor="middle" fill="#aaa" font-size="13" font-family="Noto Sans JP">まだ昇段記録がありません</text>`;
+    return;
+  }
+
+  const PAD = { top: 20, right: 20, bottom: 50, left: 52 };
+  const gW = W - PAD.left - PAD.right;
+  const gH = H - PAD.top - PAD.bottom;
+
+  const indices = items.map(i => rankIndex(i.rank)).filter(i => i >= 0);
+  const minIdx = Math.max(0, Math.min(...indices) - 1);
+  const maxIdx = Math.min(RANKS.length - 1, Math.max(...indices) + 1);
+  const rangeIdx = maxIdx - minIdx || 1;
+
+  const isモウヒツ = genre === '毛筆';
+  const lineColor = isモウヒツ ? '#667eea' : '#43e97b';
+  const dotColor  = isモウヒツ ? '#764ba2' : '#134e5e';
+
+  const xStep = items.length > 1 ? gW / (items.length - 1) : gW / 2;
+  const pts = items.map((item, i) => {
+    const idx = rankIndex(item.rank);
+    const x = PAD.left + (items.length > 1 ? i * xStep : gW / 2);
+    const y = PAD.top + gH - ((idx - minIdx) / rangeIdx) * gH;
+    return { x, y, item };
+  });
+
+  let html = '';
+
+  // グリッド線・Y軸ラベル（表示する段位を間引き）
+  const labelCount = Math.min(6, rangeIdx + 1);
+  for (let i = 0; i <= labelCount; i++) {
+    const idx = minIdx + Math.round(i * rangeIdx / labelCount);
+    if (idx > maxIdx) continue;
+    const y = PAD.top + gH - ((idx - minIdx) / rangeIdx) * gH;
+    html += `<line x1="${PAD.left}" y1="${y}" x2="${W - PAD.right}" y2="${y}" stroke="#eee" stroke-width="1"/>`;
+    html += `<text x="${PAD.left - 5}" y="${y}" text-anchor="end" dominant-baseline="middle" fill="#aaa" font-size="10" font-family="Noto Sans JP">${RANKS[idx]||''}</text>`;
+  }
+
+  // 折れ線
+  if (pts.length > 1) {
+    const d = pts.map((p,i) => `${i===0?'M':'L'}${p.x},${p.y}`).join(' ');
+    html += `<path d="${d}" fill="none" stroke="${lineColor}" stroke-width="2.5" stroke-linejoin="round"/>`;
+    // 塗りつぶし面
+    const fillD = `M${pts[0].x},${PAD.top+gH} ` + pts.map(p=>`L${p.x},${p.y}`).join(' ') + ` L${pts[pts.length-1].x},${PAD.top+gH} Z`;
+    html += `<path d="${fillD}" fill="${lineColor}" fill-opacity="0.08"/>`;
+  }
+
+  // X軸日付ラベル（間引き）
+  const maxLabels = Math.min(items.length, 5);
+  pts.forEach((p, i) => {
+    const step = Math.max(1, Math.floor(pts.length / maxLabels));
+    if (i % step === 0 || i === pts.length - 1) {
+      const d = new Date(p.item.ts);
+      const label = `${d.getMonth()+1}/${d.getDate()}`;
+      html += `<text x="${p.x}" y="${H - PAD.bottom + 16}" text-anchor="middle" fill="#aaa" font-size="10" font-family="Noto Sans JP">${label}</text>`;
+    }
+  });
+
+  // ドット
+  pts.forEach(p => {
+    html += `<circle cx="${p.x}" cy="${p.y}" r="5" fill="${dotColor}" stroke="#fff" stroke-width="2"/>`;
+  });
+
+  svg.innerHTML = html;
+}
+
+function renderHistoryList(items, genre) {
+  const list = document.getElementById('historyList');
+  if (!items.length) { list.innerHTML = '<div class="no-history">昇段記録がありません</div>'; return; }
+  const color = genre === '毛筆' ? '#764ba2' : '#134e5e';
+  list.innerHTML = [...items].reverse().map((item, i) => {
+    const d = new Date(item.ts);
+    const dateStr = `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日`;
+    return `<div class="history-row">
+      <div class="history-dot" style="background:${color}"></div>
+      <div class="history-rank">${item.rank}</div>
+      <div class="history-date">${dateStr}</div>
+    </div>`;
+  }).join('');
+}
+
+window.closeHistory = () => document.getElementById('historyOverlay').classList.remove('open');
+
+['confirmOverlay','detailOverlay','studentDetailOverlay','historyOverlay'].forEach(id => {
+  document.getElementById(id).addEventListener('click', function(e) { if(e.target===this) this.classList.remove('open'); });
+});
+</script>
+</body>
+</html>
