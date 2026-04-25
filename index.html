@@ -383,8 +383,8 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--paper);color:var(--t
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px"><div class="card-head-label">記録ログ</div><button class="graph-btn" id="sdHistoryBtn" onclick="openStudentHistory(this.getAttribute('data-uid'))">📈 昇段グラフ</button></div>
     <div id="sdEntries"></div>
     <div class="export-bar" style="margin-top:1rem;border-top:none;padding:0">
-      <button class="export-btn-pdf" onclick="exportStudentPDF(sdCurrentUid)">📄 PDFで保存</button>
-      <button class="export-btn-csv" onclick="exportStudentCSV(sdCurrentUid)">📊 CSVで保存</button>
+      <button class="export-btn-pdf" id="sdExportPdfBtn" onclick="exportStudentPDF(this.dataset.uid)">📄 PDFで保存</button>
+      <button class="export-btn-csv" id="sdExportCsvBtn" onclick="exportStudentCSV(this.dataset.uid)">📊 CSVで保存</button>
     </div>
     <button class="modal-close" onclick="closeStudentDetail()">閉じる</button>
   </div>
@@ -785,6 +785,8 @@ window.switchTeacherTab = (tab) => {
 window.openStudentDetail = async (uid) => {
   sdCurrentUid = uid;
   document.getElementById('sdRankEditPanel').style.display = 'none';
+  document.getElementById('sdExportPdfBtn').dataset.uid = uid;
+  document.getElementById('sdExportCsvBtn').dataset.uid = uid;
   const snap = await get(ref(db, `students/${uid}`));
   const d = snap.val() || {};
   document.getElementById('sdTitle').textContent = (d.display||uid) + ' さん';
@@ -833,32 +835,73 @@ function buildExportData(uid, displayName, data) {
 }
 
 // ── PDF出力（印刷ダイアログ） ──
-function makePDFWindow(uid, displayName, lines) {
-  const rows = lines.map(l =>
-    `<tr>
-      <td style="padding:5px 8px;border-bottom:1px solid #eee;font-weight:${l.content.startsWith('【')?'bold':'normal'};color:${l.content.startsWith('【')?'#444':'#222'}">${l.genre}</td>
-      <td style="padding:5px 8px;border-bottom:1px solid #eee;white-space:nowrap">${l.date}</td>
-      <td style="padding:5px 8px;border-bottom:1px solid #eee">${l.content}</td>
-      <td style="padding:5px 8px;border-bottom:1px solid #eee;color:#555">${l.note}</td>
-    </tr>`
-  ).join('');
+function makePDFWindow(uid, displayName, data) {
+  // 現在の段位
+  const ranks = data.ranks || {};
+  const rankRows = ['毛筆','硬筆'].map(g => {
+    const cur = ranks[g]?.rank || '未設定';
+    const dt = ranks[g]?.updatedAt ? new Date(ranks[g].updatedAt).toLocaleDateString('ja-JP') : '—';
+    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:0.5px solid #f0ede6">
+      <span style="font-size:12px;color:#6b6b8a">${g}</span>
+      <span style="font-size:18px;font-weight:700;color:#1a1a2e">${cur}</span>
+      <span style="font-size:11px;color:#aaa">${dt} 変更</span>
+    </div>`;
+  }).join('');
+
+  // 昇段履歴
+  const histRows = ['毛筆','硬筆'].flatMap(g => {
+    const hist = data.rankHistory?.[g] ? Object.values(data.rankHistory[g]).sort((a,b)=>a.ts-b.ts) : [];
+    return hist.map(h => `<div style="display:flex;gap:10px;align-items:center;padding:4px 0;font-size:12px">
+      <div style="width:8px;height:8px;border-radius:50%;background:${g==='毛筆'?'#667eea':'#43e97b'};flex-shrink:0"></div>
+      <span style="color:#6b6b8a;min-width:36px">${g}</span>
+      <span style="font-weight:500;min-width:72px;color:#1a1a2e">${h.rank}</span>
+      <span style="color:#aaa">${new Date(h.ts).toLocaleDateString('ja-JP')}</span>
+    </div>`);
+  }).join('');
+
+  // 練習記録
+  const entryRows = ['毛筆','硬筆'].flatMap(g => {
+    if (!data.entries?.[g]) return [];
+    return Object.values(data.entries[g]).sort((a,b)=>a.ts-b.ts).map(e =>
+      `<div style="display:flex;gap:8px;padding:5px 0;border-bottom:0.5px solid #f0ede6;font-size:12px">
+        <span style="color:#6b6b8a;min-width:96px;flex-shrink:0">${e.date}</span>
+        <span style="padding:1px 7px;border-radius:99px;font-size:10px;background:${g==='毛筆'?'#eeedfe':'#eaf3de'};color:${g==='毛筆'?'#3C3489':'#27500A'};flex-shrink:0">${g}</span>
+        <span style="color:#444;flex:1">${e.note||'（メモなし）'}</span>
+      </div>`
+    );
+  }).join('');
+
   const html = `<!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8">
     <title>${displayName} 書道手帳</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
-      body{font-family:'Noto Sans JP',sans-serif;padding:2rem;color:#222;max-width:720px;margin:0 auto}
-      h1{font-size:20px;margin-bottom:4px}
-      p{font-size:12px;color:#888;margin-bottom:1.5rem}
-      table{width:100%;border-collapse:collapse;font-size:13px}
-      th{text-align:left;padding:6px 8px;border-bottom:2px solid #333;font-size:11px;color:#555;letter-spacing:.05em}
-      @media print{body{padding:1rem}}
+      *{box-sizing:border-box;margin:0;padding:0}
+      body{font-family:'Noto Sans JP',sans-serif;background:#faf8f4;padding:2.5rem;color:#1a1a2e;max-width:680px;margin:0 auto}
+      .page-header{text-align:center;border-bottom:2px solid #1a1a2e;padding-bottom:1.25rem;margin-bottom:1.75rem}
+      .kanji{font-family:'Noto Serif JP',serif;font-size:44px;color:#1a1a2e;display:block;line-height:1}
+      .title{font-size:16px;font-weight:700;letter-spacing:.15em;margin-top:6px}
+      .name{font-size:13px;color:#6b6b8a;margin-top:4px}
+      .section{margin-bottom:1.5rem}
+      .section-title{font-size:10px;font-weight:700;letter-spacing:.12em;color:#6b6b8a;border-bottom:0.5px solid #e0ddd6;padding-bottom:4px;margin-bottom:.75rem;text-transform:uppercase}
+      .footer{text-align:center;margin-top:2rem;padding-top:1rem;border-top:0.5px solid #e0ddd6;font-size:10px;color:#aaa}
+      @media print{body{background:#fff;padding:1.5rem}}
     </style>
   </head><body>
-    <h1>${displayName} さんの書道手帳</h1>
-    <p>エクスポート日: ${new Date().toLocaleDateString('ja-JP')}</p>
-    <table>
-      <thead><tr><th>種別</th><th>日付</th><th>内容</th><th>メモ</th></tr></thead>
-      <tbody>${rows}</tbody>
-    </table>
+    <div class="page-header">
+      <span class="kanji">書</span>
+      <div class="title">書道手帳</div>
+      <div class="name">${displayName} さん　／　エクスポート日: ${new Date().toLocaleDateString('ja-JP')}</div>
+    </div>
+    <div class="section">
+      <div class="section-title">現在の段位・級位</div>
+      ${rankRows}
+    </div>
+    ${histRows ? `<div class="section"><div class="section-title">昇段履歴</div>${histRows}</div>` : ''}
+    <div class="section">
+      <div class="section-title">練習記録</div>
+      ${entryRows || '<div style="font-size:12px;color:#aaa">記録なし</div>'}
+    </div>
+    <div class="footer">書道手帳 — SHODO TECHO</div>
     <script>window.onload=()=>{window.print()}<\/script>
   </body></html>`;
   const w = window.open('', '_blank');
@@ -885,8 +928,7 @@ window.exportMyPDF = async () => {
   const uid = currentUser.id;
   const snap = await get(ref(db, `students/${uid}`));
   const d = snap.val() || {};
-  const lines = buildExportData(uid, currentUser.display, d);
-  makePDFWindow(uid, currentUser.display, lines);
+  makePDFWindow(uid, currentUser.display, d);
 };
 window.exportMyCSV = async () => {
   const uid = currentUser.id;
@@ -898,15 +940,14 @@ window.exportMyCSV = async () => {
 
 // ── 先生が生徒のデータをエクスポート ──
 window.exportStudentPDF = async (uid) => {
-  if (!uid) return;
+  if (!uid) { console.warn("exportStudentPDF: uid is empty"); return; }
   const snap = await get(ref(db, `students/${uid}`));
   const d = snap.val() || {};
   const display = d.display || uid;
-  const lines = buildExportData(uid, display, d);
-  makePDFWindow(uid, display, lines);
+  makePDFWindow(uid, display, d);
 };
 window.exportStudentCSV = async (uid) => {
-  if (!uid) return;
+  if (!uid) { console.warn("exportStudentCSV: uid is empty"); return; }
   const snap = await get(ref(db, `students/${uid}`));
   const d = snap.val() || {};
   const display = d.display || uid;
