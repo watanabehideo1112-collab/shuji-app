@@ -206,10 +206,24 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--paper);color:var(--t
     <div id="authError" class="auth-error"></div>
 
     <div id="studentForm">
-      <div class="auth-label">あなたのお名前</div>
-      <input class="auth-input" id="studentName" placeholder="例: 山田花子" />
-      <button class="auth-btn" onclick="loginAsStudent()">はじめる</button>
-      <div class="auth-note">名前を入力するだけでOK！<br>次回から自動でログインします📱</div>
+      <!-- ログイン -->
+      <div id="loginPane">
+        <div class="auth-label">お名前</div>
+        <input class="auth-input" id="studentName" placeholder="例: やまだはなこ" />
+        <div class="auth-label">パスワード（数字4桁）</div>
+        <input class="auth-input" id="studentPass" type="password" inputmode="numeric" maxlength="4" placeholder="0000" />
+        <button class="auth-btn" onclick="loginStudent()">ログイン</button>
+        <div class="auth-note">はじめての方は <span style="color:#fff;text-decoration:underline;cursor:pointer" onclick="switchAuthTab('register')">新規登録</span></div>
+      </div>
+      <!-- 新規登録 -->
+      <div id="registerPane" style="display:none">
+        <div class="auth-label">お名前</div>
+        <input class="auth-input" id="regName" placeholder="例: やまだはなこ" />
+        <div class="auth-label">パスワード（数字4桁）</div>
+        <input class="auth-input" id="regPass" type="password" inputmode="numeric" maxlength="4" placeholder="0000" />
+        <button class="auth-btn" onclick="registerStudent()">登録してはじめる</button>
+        <div class="auth-note">すでに登録済みの方は <span style="color:#fff;text-decoration:underline;cursor:pointer" onclick="switchAuthTab('login')">ログイン</span></div>
+      </div>
       <div class="auth-teacher-link">先生の方は <span onclick="showTeacherForm()">こちら</span></div>
     </div>
 
@@ -268,12 +282,6 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--paper);color:var(--t
             <label>メモ（任意）</label>
             <textarea id="fNote" placeholder="練習内容、気づき、課題など..."></textarea>
           </div>
-          <div class="photo-drop" onclick="document.getElementById('photoIn').click()">
-            📷 今日の一枚を追加（複数可）<br>
-            <span style="font-size:11px;opacity:.65">写真はこのスマホにだけ保存されます</span>
-            <input type="file" id="photoIn" accept="image/*" multiple style="display:none" onchange="handlePhotos(event)" />
-          </div>
-          <div class="previews" id="previews"></div>
           <button class="save-btn genre-毛筆" id="saveBtn" onclick="addEntry()">保存する</button>
         </div>
       </div>
@@ -347,6 +355,9 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--paper);color:var(--t
     <h3 id="dTitle"></h3>
     <div class="detail-photos" id="dPhotos"></div>
     <div id="dDetails"></div>
+    <div id="dSavePhotosBar" style="display:none;margin-top:.75rem">
+      <button class="export-btn-csv" style="width:100%;margin-bottom:6px" onclick="saveAllPhotosToDevice()">📥 写真をまとめて保存</button>
+    </div>
     <button class="modal-close" onclick="closeDetail()">閉じる</button>
   </div>
 </div>
@@ -380,7 +391,41 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--paper);color:var(--t
       <div class="card-head-label" id="sdRankEditLabel" style="margin-bottom:8px">段位を選択</div>
       <div class="rank-pills" id="sdRankPills" style="padding:0;flex-wrap:wrap"></div>
     </div>
+    <div style="margin-bottom:1rem;padding:10px 12px;background:rgba(6,199,85,.06);border:0.5px solid rgba(6,199,85,.2);border-radius:var(--radius-sm)">
+      <div style="font-size:10px;font-weight:700;color:#06a847;letter-spacing:.06em;margin-bottom:6px">LINE 検索キーワード（タップしてコピー）</div>
+      <div style="display:flex;gap:6px;align-items:center">
+        <input id="lineKeywordInput" type="text" placeholder="例: ふじわら、田中はな など" style="flex:1;font-size:13px;border:0.5px solid rgba(6,199,85,.3);border-radius:var(--radius-sm);padding:7px 10px;background:#fff" />
+        <button class="graph-btn" style="background:rgba(6,199,85,.12);color:#06a847;border-color:rgba(6,199,85,.3);flex-shrink:0" onclick="saveLineKeyword()">保存</button>
+      </div>
+    </div>
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px"><div class="card-head-label">記録ログ</div><button class="graph-btn" id="sdHistoryBtn" onclick="openStudentHistory(this.getAttribute('data-uid'))">📈 昇段グラフ</button></div>
+    <!-- 先生が写真付き記録を追加 -->
+    <div style="margin-bottom:1rem;padding:10px 12px;background:rgba(102,126,234,.05);border:0.5px solid rgba(102,126,234,.2);border-radius:var(--radius-sm)">
+      <div class="card-head-label" style="margin-bottom:8px">記録を追加（写真付き）</div>
+      <div style="display:flex;gap:8px;margin-bottom:8px">
+        <div style="flex:1">
+          <label style="font-size:11px;color:var(--text-sub);display:block;margin-bottom:3px">書体</label>
+          <select id="sdTeacherGenre" style="width:100%;font-size:13px">
+            <option value="毛筆">毛筆</option>
+            <option value="硬筆">硬筆</option>
+          </select>
+        </div>
+        <div style="flex:1">
+          <label style="font-size:11px;color:var(--text-sub);display:block;margin-bottom:3px">日付</label>
+          <input type="date" id="sdTeacherDate" style="width:100%;font-size:13px" />
+        </div>
+      </div>
+      <div style="margin-bottom:8px">
+        <label style="font-size:11px;color:var(--text-sub);display:block;margin-bottom:3px">メモ（任意）</label>
+        <input type="text" id="sdTeacherNote" placeholder="練習内容など..." style="width:100%;font-size:13px" />
+      </div>
+      <div class="photo-drop" onclick="document.getElementById('teacherPhotoIn').click()" style="margin-bottom:8px">
+        📷 写真を追加（複数可）
+        <input type="file" id="teacherPhotoIn" accept="image/*" multiple style="display:none" onchange="handleTeacherPhotos(event)" />
+      </div>
+      <div class="previews" id="teacherPreviews" style="margin-bottom:8px"></div>
+      <button class="save-btn" style="width:100%" onclick="addTeacherEntry()">記録を保存する</button>
+    </div>
     <div id="sdEntries"></div>
     <div class="export-bar" style="margin-top:1rem;border-top:none;padding:0">
       <button class="export-btn-pdf" id="sdExportPdfBtn" onclick="exportStudentPDF(this.dataset.uid)">📄 PDFをDL</button>
@@ -444,6 +489,8 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--paper);color:var(--t
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getDatabase, ref, set, get, push, onValue, remove } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getStorage, ref as sref, uploadBytes, getDownloadURL, listAll, deleteObject } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyD2-7r-SZz4uQBHRRQdXqvkqp3rAH3bIVs",
@@ -457,9 +504,12 @@ const firebaseConfig = {
 
 const fbApp = initializeApp(firebaseConfig);
 const db = getDatabase(fbApp);
+const auth = getAuth(fbApp);
+const storage = getStorage(fbApp);
 
 const RANKS = ['10級','9級','8級','7級','6級','5級','4級','3級','2級','1級','特級','準初段','初段','準2段','2段','準3段','3段','準4段','4段','準5段','5段','準6段','6段','準7段','7段','準8段','8段','準9段','9段','準10段','10段','準優待生','優待生','準特待生','特待生'];
 const TEACHER_PASS = 'shodo2024';
+const TEACHER_EMAIL = 'teacher@shuji-app.internal'; // 先生用ダミーメール
 const LS_USER = 'shuji_user';
 const LS_PHOTOS = 'shuji_photos';
 
@@ -476,18 +526,33 @@ const DAYS = ['sun','mon','tue','wed','thu','fri','sat'];
 const DAY_LABELS = {mon:'月',tue:'火',wed:'水',thu:'木',fri:'金',sat:'土',sun:'日'};
 
 
-// 写真ローカル管理
-function savePhotoLocal(uid, genre, key, photos) {
-  if (!photos.length) return;
+// 写真URL キャッシュ（Storage URL）
+const photoUrlCache = {};
+
+async function getPhotoUrls(uid, genre, key) {
+  const cacheKey = `${uid}_${genre}_${key}`;
+  if (photoUrlCache[cacheKey]) return photoUrlCache[cacheKey];
   try {
-    const store = JSON.parse(localStorage.getItem(LS_PHOTOS) || '{}');
-    store[`${uid}_${genre}_${key}`] = photos;
-    localStorage.setItem(LS_PHOTOS, JSON.stringify(store));
-  } catch(e) { alert('写真の保存に失敗しました。ストレージ容量をご確認ください。'); }
+    const listRef = sref(storage, `photos/${uid}/${genre}/${key}`);
+    const result = await listAll(listRef);
+    const urls = await Promise.all(result.items.map(item => getDownloadURL(item)));
+    photoUrlCache[cacheKey] = urls;
+    return urls;
+  } catch(e) { return []; }
 }
-function getPhotoLocal(uid, genre, key) {
-  const store = JSON.parse(localStorage.getItem(LS_PHOTOS) || '{}');
-  return store[`${uid}_${genre}_${key}`] || [];
+
+async function uploadPhotosToStorage(uid, genre, entryKey, files) {
+  const urls = [];
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i];
+    const path = `photos/${uid}/${genre}/${entryKey}/${i}_${Date.now()}`;
+    const storageRef = sref(storage, path);
+    await uploadBytes(storageRef, file);
+    const url = await getDownloadURL(storageRef);
+    urls.push(url);
+  }
+  photoUrlCache[`${uid}_${genre}_${entryKey}`] = urls;
+  return urls;
 }
 
 function today() { return new Date().toISOString().slice(0,10); }
@@ -510,35 +575,99 @@ window.showStudentForm = () => {
   document.getElementById('authError').textContent = '';
 };
 
-window.loginAsStudent = async () => {
+// タブ切り替え
+window.switchAuthTab = (tab) => {
+  const isLogin = tab === 'login';
+  document.getElementById('loginPane').style.display = isLogin ? 'block' : 'none';
+  document.getElementById('registerPane').style.display = isLogin ? 'none' : 'block';
+  document.getElementById('authError').textContent = '';
+};
+
+window.loginStudent = async () => {
   const name = document.getElementById('studentName').value.trim();
-  if (!name) { document.getElementById('authError').textContent = 'お名前を入力してください'; return; }
-  const uid = safeId(name);
-  const snap = await get(ref(db, `students/${uid}/display`));
-  if (!snap.exists()) await set(ref(db, `students/${uid}/display`), name);
-  currentUser = { id: uid, display: name, isTeacher: false };
-  localStorage.setItem(LS_USER, JSON.stringify(currentUser));
-  startApp();
-};
-
-window.loginAsTeacher = () => {
-  if (document.getElementById('teacherPass').value !== TEACHER_PASS) {
-    document.getElementById('authError').textContent = 'パスワードが違います'; return;
+  const pass = document.getElementById('studentPass').value.trim();
+  const err = document.getElementById('authError');
+  if (!name) { err.textContent = 'お名前を入力してください'; return; }
+  if (pass.length !== 4 || !/^[0-9]{4}$/.test(pass)) { err.textContent = 'パスワードは数字4桁で入力してください'; return; }
+  const email = safeId(name) + '@shuji-app.internal';
+  const authPass = pass + '_shodo';
+  err.textContent = 'ログイン中...';
+  try {
+    const cred = await signInWithEmailAndPassword(auth, email, authPass);
+    const snap = await get(ref(db, `students/${cred.user.uid}/display`));
+    currentUser = { id: cred.user.uid, display: snap.val() || name, isTeacher: false };
+    err.textContent = '';
+    startApp();
+  } catch(e) {
+    if (e.code === 'auth/invalid-credential' || e.code === 'auth/user-not-found') {
+      err.textContent = '名前またはパスワードが違います';
+    } else if (e.code === 'auth/wrong-password') {
+      err.textContent = 'パスワードが違います';
+    } else {
+      err.textContent = 'エラー: ' + e.message;
+    }
   }
-  currentUser = { id: 'sensei', display: '先生', isTeacher: true };
+};
+
+window.registerStudent = async () => {
+  const name = document.getElementById('regName').value.trim();
+  const pass = document.getElementById('regPass').value.trim();
+  const err = document.getElementById('authError');
+  if (!name) { err.textContent = 'お名前を入力してください'; return; }
+  if (pass.length !== 4 || !/^[0-9]{4}$/.test(pass)) { err.textContent = 'パスワードは数字4桁で入力してください'; return; }
+  const email = safeId(name) + '@shuji-app.internal';
+  const authPass = pass + '_shodo';
+  err.textContent = '登録中...';
+  try {
+    const cred = await createUserWithEmailAndPassword(auth, email, authPass);
+    await set(ref(db, `students/${cred.user.uid}/display`), name);
+    currentUser = { id: cred.user.uid, display: name, isTeacher: false };
+    err.textContent = '';
+    startApp();
+  } catch(e) {
+    if (e.code === 'auth/email-already-in-use') {
+      err.textContent = 'この名前はすでに使われています。ログインをお試しください';
+    } else {
+      err.textContent = 'エラー: ' + e.message;
+    }
+  }
+};
+
+window.loginAsTeacher = async () => {
+  const pass = document.getElementById('teacherPass').value;
+  const err = document.getElementById('authError');
+  if (pass !== TEACHER_PASS) { err.textContent = 'パスワードが違います'; return; }
+  err.textContent = 'ログイン中...';
+  try {
+    await signInWithEmailAndPassword(auth, TEACHER_EMAIL, TEACHER_PASS + '_teacher_secret');
+  } catch(e) {
+    // 先生アカウントが未作成なら作成
+    if (e.code === 'auth/invalid-credential' || e.code === 'auth/user-not-found') {
+      try {
+        await createUserWithEmailAndPassword(auth, TEACHER_EMAIL, TEACHER_PASS + '_teacher_secret');
+      } catch(e2) { /* すでに存在する場合は無視 */ }
+      await signInWithEmailAndPassword(auth, TEACHER_EMAIL, TEACHER_PASS + '_teacher_secret');
+    }
+  }
+  currentUser = { id: auth.currentUser.uid, display: '先生', isTeacher: true };
+  // 先生UIDをDBに登録（ルール対応のため）
+  await set(ref(db, `teacher/uid`), auth.currentUser.uid);
+  err.textContent = '';
   startApp();
 };
 
-window.logout = () => {
+window.logout = async () => {
   unsubFns.forEach(f => f()); unsubFns = [];
   currentUser = null;
-  localStorage.removeItem(LS_USER);
+  try { await signOut(auth); } catch(e) {}
   document.getElementById('appScreen').style.display = 'none';
   document.getElementById('authScreen').style.display = 'flex';
   document.getElementById('studentName').value = '';
+  document.getElementById('studentPass').value = '';
   document.getElementById('teacherPass').value = '';
   document.getElementById('authError').textContent = '';
   showStudentForm();
+  switchAuthTab('login');
 };
 
 function startApp() {
@@ -562,14 +691,25 @@ function startApp() {
   }
 }
 
-// 自動ログイン
-try {
-  const saved = localStorage.getItem(LS_USER);
-  if (saved) {
-    const u = JSON.parse(saved);
-    if (u && u.id && !u.isTeacher) { currentUser = u; startApp(); }
-  }
-} catch(e) { localStorage.removeItem(LS_USER); }
+// 自動ログイン（Firebase Auth状態監視）
+onAuthStateChanged(auth, async (user) => {
+  if (currentUser) return;
+  if (!user) return;
+  try {
+    // 先生かどうか判定
+    const teacherSnap = await get(ref(db, 'teacher/uid'));
+    if (teacherSnap.val() === user.uid) {
+      currentUser = { id: user.uid, display: '先生', isTeacher: true };
+      startApp();
+      return;
+    }
+    const snap = await get(ref(db, `students/${user.uid}/display`));
+    if (snap.exists()) {
+      currentUser = { id: user.uid, display: snap.val(), isTeacher: false };
+      startApp();
+    }
+  } catch(e) { console.warn('自動ログイン失敗:', e); }
+});
 
 // 生徒リスナー
 function listenStudent() {
@@ -611,16 +751,22 @@ function renderRankPills(data) {
   ).join('');
 }
 
-function renderEntries(data) {
+async function renderEntries(data) {
   cachedEntries = data;
   const list = document.getElementById('entryList');
   const uid = currentUser.id, genre = currentGenre;
   if (!data) { list.innerHTML = '<div class="empty">記録がありません</div>'; return; }
   let items = sortEntries(Object.entries(data));
   if (!items.length) { list.innerHTML = '<div class="empty">この条件の記録がありません</div>'; return; }
+  list.innerHTML = '<div class="loading">写真を読み込み中...</div>';
+  // 全エントリの写真URLを並行取得
+  const photoMap = {};
+  await Promise.all(items.map(async ([key]) => {
+    photoMap[key] = await getPhotoUrls(uid, genre, key);
+  }));
   if (entryViewMode === 'grid') {
     list.innerHTML = '<div class="entry-grid">' + items.map(([key, e]) => {
-      const photos = getPhotoLocal(uid, genre, key);
+      const photos = photoMap[key] || [];
       const img = photos.length ? `<img src="${photos[0]}" loading="lazy">` :
         `<div class="grid-cell-noimg"><span class="gc-icon">${genre==='毛筆'?'🖌':'✏️'}</span><span class="gc-date">${e.date}</span></div>`;
       return `<div class="grid-cell" onclick="openDetail('${key}','${e.date}','${encodeURIComponent(e.note||'')}')">
@@ -631,7 +777,7 @@ function renderEntries(data) {
     }).join('') + '</div>';
   } else {
     list.innerHTML = items.map(([key, e]) => {
-      const photos = getPhotoLocal(uid, genre, key);
+      const photos = photoMap[key] || [];
       const thumbs = photos.length
         ? photos.slice(0,2).map(s => `<img class="entry-thumb" src="${s}">`).join('')
         : `<div class="entry-icon">${genre==='毛筆'?'🖌':'✏️'}</div>`;
@@ -668,34 +814,37 @@ window.askRankChange = (rank) => {
 window.closeConfirm = () => { document.getElementById('confirmOverlay').classList.remove('open'); pendingRank = null; };
 
 // 写真
-window.handlePhotos = (e) => {
-  [...e.target.files].forEach(file => {
-    const r = new FileReader();
-    r.onload = ev => { pendingPhotos.push(ev.target.result); renderPreviews(); };
-    r.readAsDataURL(file);
-  });
+// 先生用写真アップロード
+let teacherPendingFiles = [];
+window.handleTeacherPhotos = (e) => {
+  teacherPendingFiles = [...teacherPendingFiles, ...e.target.files];
+  renderTeacherPreviews();
   e.target.value = '';
 };
-function renderPreviews() {
-  document.getElementById('previews').innerHTML = pendingPhotos.map((s,i) =>
-    `<div class="prev-wrap"><img src="${s}"><button class="prev-del" onclick="removePhoto(${i})">×</button></div>`
-  ).join('');
+function renderTeacherPreviews() {
+  document.getElementById('teacherPreviews').innerHTML = teacherPendingFiles.map((f,i) => {
+    const url = URL.createObjectURL(f);
+    return `<div class="prev-wrap"><img src="${url}"><button class="prev-del" onclick="removeTeacherPhoto(${i})">×</button></div>`;
+  }).join('');
 }
-window.removePhoto = (i) => { pendingPhotos.splice(i,1); renderPreviews(); };
+window.removeTeacherPhoto = (i) => { teacherPendingFiles.splice(i,1); renderTeacherPreviews(); };
 
 window.addEntry = async () => {
   const date = document.getElementById('fDate').value || today();
   const note = document.getElementById('fNote').value.trim();
-  const newRef = await push(ref(db, `students/${currentUser.id}/entries/${currentGenre}`), { date, note, ts: Date.now() });
-  if (pendingPhotos.length) savePhotoLocal(currentUser.id, currentGenre, newRef.key, [...pendingPhotos]);
-  pendingPhotos = []; renderPreviews();
+  await push(ref(db, `students/${currentUser.id}/entries/${currentGenre}`), { date, note, ts: Date.now() });
   document.getElementById('fNote').value = '';
 };
 
-window.openDetail = (key, date, noteEnc) => {
+let detailCurrentPhotos = [];
+window.openDetail = async (key, date, noteEnc) => {
   const note = decodeURIComponent(noteEnc);
-  const photos = getPhotoLocal(currentUser.id, currentGenre, key);
   document.getElementById('dTitle').textContent = date;
+  document.getElementById('dPhotos').innerHTML = '<div class="loading">読み込み中...</div>';
+  document.getElementById('detailOverlay').classList.add('open');
+  const uid = currentUser.id;
+  const photos = await getPhotoUrls(uid, currentGenre, key);
+  detailCurrentPhotos = photos;
   const ph = document.getElementById('dPhotos');
   if (photos.length === 1) ph.innerHTML = `<img class="dphoto-1" src="${photos[0]}">`;
   else if (photos.length > 1) ph.innerHTML = photos.map(s => `<img class="dphoto-n" src="${s}">`).join('');
@@ -703,7 +852,21 @@ window.openDetail = (key, date, noteEnc) => {
   document.getElementById('dDetails').innerHTML = note
     ? `<div class="detail-row"><span class="detail-label">メモ</span><span class="detail-val">${note}</span></div>`
     : '<div style="color:var(--text-sub);font-size:13px">メモなし</div>';
-  document.getElementById('detailOverlay').classList.add('open');
+  // まとめて保存ボタン表示
+  document.getElementById('dSavePhotosBar').style.display = photos.length ? 'block' : 'none';
+};
+
+// まとめて保存（各写真を個別ダウンロード）
+window.saveAllPhotosToDevice = async () => {
+  for (let i = 0; i < detailCurrentPhotos.length; i++) {
+    const url = detailCurrentPhotos[i];
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `shuji_${i+1}.jpg`;
+    a.target = '_blank';
+    a.click();
+    await new Promise(r => setTimeout(r, 500));
+  }
 };
 window.closeDetail = () => document.getElementById('detailOverlay').classList.remove('open');
 
@@ -747,7 +910,8 @@ function renderStudentList(data) {
           <div class="student-ranks" style="margin-top:4px">${badges||'<span style="font-size:12px;color:var(--text-sub)">段位未設定</span>'}</div>
           ${latest?`<div class="student-updated">最終更新: ${fmtDT(latest)}</div>`:''}
         </div>
-        <div style="display:flex;gap:5px;flex-shrink:0;margin-left:8px">
+        <div style="display:flex;gap:5px;flex-shrink:0;margin-left:8px;flex-wrap:wrap;justify-content:flex-end">
+          <button class="graph-btn" style="background:rgba(6,199,85,.1);color:#06c755;border-color:rgba(6,199,85,.25)" onclick="event.stopPropagation();copyLineSearch('${display}','${uid}')" id="line-copy-${uid}">📋 LINE検索用</button>
           <button class="graph-btn" onclick="event.stopPropagation();openDayPicker('${uid}','${display}')">曜日</button>
           <button class="student-del-btn" style="position:static;margin:0" onclick="event.stopPropagation();askDelStudent('${uid}','${display}')">削除</button>
         </div>
@@ -787,8 +951,13 @@ window.switchTeacherTab = (tab) => {
 window.openStudentDetail = async (uid) => {
   sdCurrentUid = uid;
   document.getElementById('sdRankEditPanel').style.display = 'none';
+  const sdDateEl = document.getElementById('sdTeacherDate'); if(sdDateEl) sdDateEl.value = today();
   document.getElementById('sdExportPdfBtn').dataset.uid = uid;
   document.getElementById('sdExportCsvBtn').dataset.uid = uid;
+  // LINE検索キーワード読み込み
+  get(ref(db, `students/${uid}/lineKeyword`)).then(snap => {
+    document.getElementById('lineKeywordInput').value = snap.val() || '';
+  });
   const snap = await get(ref(db, `students/${uid}`));
   const d = snap.val() || {};
   document.getElementById('sdTitle').textContent = (d.display||uid) + ' さん';
@@ -801,18 +970,62 @@ window.openStudentDetail = async (uid) => {
   });
   all.sort((a,b) => b.ts - a.ts);
   // 先生には写真を表示しない
-  document.getElementById('sdEntries').innerHTML = all.length
-    ? all.map(e => `<div class="entry-item" style="padding:8px 0;cursor:default">
-        <div class="entry-icon" style="width:36px;height:36px;font-size:16px">${e.genre==='毛筆'?'🖌':'✏️'}</div>
-        <div class="entry-meta">
-          <div class="entry-date">${e.date} · ${e.genre}</div>
-          <div class="entry-note">${e.note||'(メモなし)'}</div>
-        </div>
-      </div>`).join('')
-    : '<div style="color:var(--text-sub);font-size:13px;padding:.5rem 0">記録がありません</div>';
+  const sdEntriesEl = document.getElementById('sdEntries');
+  if (!all.length) {
+    sdEntriesEl.innerHTML = '<div style="color:var(--text-sub);font-size:13px;padding:.5rem 0">記録がありません</div>';
+  } else {
+    // まず記録を表示してから写真を非同期で読み込む
+    sdEntriesEl.innerHTML = all.map((e,i) => `<div class="entry-item" id="sd-entry-${i}" style="cursor:default">
+      <div class="entry-icon" id="sd-thumb-${i}" style="width:44px;height:44px;font-size:16px">${e.genre==='毛筆'?'🖌':'✏️'}</div>
+      <div class="entry-meta">
+        <div class="entry-date">${e.date} · ${e.genre}</div>
+        <div class="entry-note">${e.note||'(メモなし)'}</div>
+      </div>
+    </div>`).join('');
+    // 写真を非同期で差し込む
+    all.forEach(async (e, i) => {
+      const urls = await getPhotoUrls(uid, e.genre, e.key);
+      if (urls.length) {
+        const thumbEl = document.getElementById('sd-thumb-'+i);
+        if (thumbEl) thumbEl.innerHTML = `<img src="${urls[0]}" style="width:44px;height:44px;object-fit:cover;border-radius:8px">`;
+      }
+    });
+  }
   document.getElementById('studentDetailOverlay').classList.add('open');
 };
-window.closeStudentDetail = () => document.getElementById('studentDetailOverlay').classList.remove('open');
+window.closeStudentDetail = () => { document.getElementById('studentDetailOverlay').classList.remove('open'); teacherPendingFiles = []; };
+
+// 先生が生徒の記録に写真をアップロードして保存
+window.addTeacherEntry = async () => {
+  if (!sdCurrentUid) return;
+  const genre = document.getElementById('sdTeacherGenre')?.value || '毛筆';
+  const date = document.getElementById('sdTeacherDate')?.value || today();
+  const note = document.getElementById('sdTeacherNote')?.value?.trim() || '';
+  if (!teacherPendingFiles.length && !note) return;
+  const newRef = await push(ref(db, `students/${sdCurrentUid}/entries/${genre}`), { date, note, ts: Date.now() });
+  if (teacherPendingFiles.length) {
+    await uploadPhotosToStorage(sdCurrentUid, genre, newRef.key, teacherPendingFiles);
+  }
+  teacherPendingFiles = [];
+  renderTeacherPreviews();
+  // 記録一覧を更新
+  openStudentDetail(sdCurrentUid);
+};
+
+
+window.saveLineKeyword = async () => {
+  if (!sdCurrentUid) return;
+  const keyword = document.getElementById('lineKeywordInput').value.trim();
+  if (keyword) {
+    await set(ref(db, `students/${sdCurrentUid}/lineKeyword`), keyword);
+  } else {
+    await remove(ref(db, `students/${sdCurrentUid}/lineKeyword`));
+  }
+  const btn = event.target;
+  btn.textContent = '✅ 保存済';
+  setTimeout(() => btn.textContent = '保存', 1500);
+};
+
 
 // ── エクスポート共通 ──
 function buildExportData(uid, displayName, data) {
@@ -1245,6 +1458,25 @@ function sortStudents(entries) {
     .sort((a,b) => (a[1].display||a[0]).localeCompare(b[1].display||b[0], 'ja'));
 }
 
+
+
+// ── LINE検索用キーワードコピー ──
+window.copyLineSearch = async (display, uid) => {
+  // 先生が設定したLINE検索キーワードがあればそれを、なければ表示名をコピー
+  const snap = await get(ref(db, `students/${uid}/lineKeyword`));
+  const keyword = snap.val() || display;
+  try {
+    await navigator.clipboard.writeText(keyword);
+    const btn = document.getElementById('line-copy-' + uid);
+    const orig = btn.textContent;
+    btn.textContent = '✅ コピーしました';
+    btn.style.background = 'rgba(6,199,85,.2)';
+    setTimeout(() => { btn.textContent = orig; btn.style.background = 'rgba(6,199,85,.1)'; }, 2000);
+  } catch(e) {
+    // clipboard APIが使えない場合はpromptで代替
+    window.prompt('このキーワードをコピーしてLINEで検索してください:', keyword);
+  }
+};
 
 // ── 曜日設定 ──
 let dayPickerUid = null;
