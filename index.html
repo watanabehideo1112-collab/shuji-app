@@ -271,20 +271,8 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--paper);color:var(--t
           <div class="rank-pills" id="rankPills"></div>
         </div>
       </div>
-      <div class="card">
-        <div class="card-head"><span class="card-head-label">記録を追加</span></div>
-        <div class="form-body">
-          <div class="fg">
-            <label>日付</label>
-            <input type="date" id="fDate" />
-          </div>
-          <div class="fg">
-            <label>メモ（任意）</label>
-            <textarea id="fNote" placeholder="練習内容、気づき、課題など..."></textarea>
-          </div>
-          <button class="save-btn genre-毛筆" id="saveBtn" onclick="addEntry()">保存する</button>
-        </div>
-      </div>
+
+
       <div class="card">
         <div class="card-head">
           <span class="card-head-label">記録ログ</span>
@@ -353,10 +341,16 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--paper);color:var(--t
 <div class="overlay" id="detailOverlay">
   <div class="modal detail-modal">
     <h3 id="dTitle"></h3>
-    <div class="detail-photos" id="dPhotos"></div>
-    <div id="dDetails"></div>
-    <div id="dSavePhotosBar" style="display:none;margin-top:.75rem">
-      <button class="export-btn-csv" style="width:100%;margin-bottom:6px" onclick="saveAllPhotosToDevice()">📥 写真をまとめて保存</button>
+    <div id="dDetails" style="margin-bottom:.75rem"></div>
+    <div id="dPhotosWrap" style="display:none">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <span style="font-size:11px;font-weight:700;color:var(--text-sub);letter-spacing:.06em">写真</span>
+        <div style="display:flex;gap:6px">
+          <button class="small-btn" onclick="toggleSelectAll()" id="selectAllBtn">全選択</button>
+          <button class="small-btn" style="background:linear-gradient(135deg,var(--purple),var(--purple2));color:#fff;border:none" onclick="saveSelectedPhotos()">📥 選択を保存</button>
+        </div>
+      </div>
+      <div id="dPhotoGrid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:.75rem"></div>
     </div>
     <button class="modal-close" onclick="closeDetail()">閉じる</button>
   </div>
@@ -399,33 +393,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--paper);color:var(--t
       </div>
     </div>
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px"><div class="card-head-label">記録ログ</div><button class="graph-btn" id="sdHistoryBtn" onclick="openStudentHistory(this.getAttribute('data-uid'))">📈 昇段グラフ</button></div>
-    <!-- 先生が写真付き記録を追加 -->
-    <div style="margin-bottom:1rem;padding:10px 12px;background:rgba(102,126,234,.05);border:0.5px solid rgba(102,126,234,.2);border-radius:var(--radius-sm)">
-      <div class="card-head-label" style="margin-bottom:8px">記録を追加（写真付き）</div>
-      <div style="display:flex;gap:8px;margin-bottom:8px">
-        <div style="flex:1">
-          <label style="font-size:11px;color:var(--text-sub);display:block;margin-bottom:3px">書体</label>
-          <select id="sdTeacherGenre" style="width:100%;font-size:13px">
-            <option value="毛筆">毛筆</option>
-            <option value="硬筆">硬筆</option>
-          </select>
-        </div>
-        <div style="flex:1">
-          <label style="font-size:11px;color:var(--text-sub);display:block;margin-bottom:3px">日付</label>
-          <input type="date" id="sdTeacherDate" style="width:100%;font-size:13px" />
-        </div>
-      </div>
-      <div style="margin-bottom:8px">
-        <label style="font-size:11px;color:var(--text-sub);display:block;margin-bottom:3px">メモ（任意）</label>
-        <input type="text" id="sdTeacherNote" placeholder="練習内容など..." style="width:100%;font-size:13px" />
-      </div>
-      <div class="photo-drop" onclick="document.getElementById('teacherPhotoIn').click()" style="margin-bottom:8px">
-        📷 写真を追加（複数可）
-        <input type="file" id="teacherPhotoIn" accept="image/*" multiple style="display:none" onchange="handleTeacherPhotos(event)" />
-      </div>
-      <div class="previews" id="teacherPreviews" style="margin-bottom:8px"></div>
-      <button class="save-btn" style="width:100%" onclick="addTeacherEntry()">記録を保存する</button>
-    </div>
+
     <div id="sdEntries"></div>
     <div class="export-bar" style="margin-top:1rem;border-top:none;padding:0">
       <button class="export-btn-pdf" id="sdExportPdfBtn" onclick="exportStudentPDF(this.dataset.uid)">📄 PDFをDL</button>
@@ -490,7 +458,6 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--paper);color:var(--t
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getDatabase, ref, set, get, push, onValue, remove } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import { getStorage, ref as sref, uploadBytes, getDownloadURL, listAll, deleteObject } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyD2-7r-SZz4uQBHRRQdXqvkqp3rAH3bIVs",
@@ -505,7 +472,6 @@ const firebaseConfig = {
 const fbApp = initializeApp(firebaseConfig);
 const db = getDatabase(fbApp);
 const auth = getAuth(fbApp);
-const storage = getStorage(fbApp);
 
 const RANKS = ['10級','9級','8級','7級','6級','5級','4級','3級','2級','1級','特級','準初段','初段','準2段','2段','準3段','3段','準4段','4段','準5段','5段','準6段','6段','準7段','7段','準8段','8段','準9段','9段','準10段','10段','準優待生','優待生','準特待生','特待生'];
 const TEACHER_PASS = 'shodo2024';
@@ -526,33 +492,18 @@ const DAYS = ['sun','mon','tue','wed','thu','fri','sat'];
 const DAY_LABELS = {mon:'月',tue:'火',wed:'水',thu:'木',fri:'金',sat:'土',sun:'日'};
 
 
-// 写真URL キャッシュ（Storage URL）
-const photoUrlCache = {};
-
-async function getPhotoUrls(uid, genre, key) {
-  const cacheKey = `${uid}_${genre}_${key}`;
-  if (photoUrlCache[cacheKey]) return photoUrlCache[cacheKey];
+// 写真ローカル管理
+function savePhotoLocal(uid, genre, key, photos) {
+  if (!photos.length) return;
   try {
-    const listRef = sref(storage, `photos/${uid}/${genre}/${key}`);
-    const result = await listAll(listRef);
-    const urls = await Promise.all(result.items.map(item => getDownloadURL(item)));
-    photoUrlCache[cacheKey] = urls;
-    return urls;
-  } catch(e) { return []; }
+    const store = JSON.parse(localStorage.getItem(LS_PHOTOS) || '{}');
+    store[`${uid}_${genre}_${key}`] = photos;
+    localStorage.setItem(LS_PHOTOS, JSON.stringify(store));
+  } catch(e) { alert('写真の保存に失敗しました。ストレージ容量をご確認ください。'); }
 }
-
-async function uploadPhotosToStorage(uid, genre, entryKey, files) {
-  const urls = [];
-  for (let i = 0; i < files.length; i++) {
-    const file = files[i];
-    const path = `photos/${uid}/${genre}/${entryKey}/${i}_${Date.now()}`;
-    const storageRef = sref(storage, path);
-    await uploadBytes(storageRef, file);
-    const url = await getDownloadURL(storageRef);
-    urls.push(url);
-  }
-  photoUrlCache[`${uid}_${genre}_${entryKey}`] = urls;
-  return urls;
+function getPhotoLocal(uid, genre, key) {
+  const store = JSON.parse(localStorage.getItem(LS_PHOTOS) || '{}');
+  return store[`${uid}_${genre}_${key}`] || [];
 }
 
 function today() { return new Date().toISOString().slice(0,10); }
@@ -582,6 +533,16 @@ window.switchAuthTab = (tab) => {
   document.getElementById('registerPane').style.display = isLogin ? 'none' : 'block';
   document.getElementById('authError').textContent = '';
 };
+
+// デバッグ用：JSエラーを画面に表示
+window.addEventListener('error', (e) => {
+  const el = document.getElementById('authError');
+  if (el) el.textContent = 'JSエラー: ' + e.message;
+});
+window.addEventListener('unhandledrejection', (e) => {
+  const el = document.getElementById('authError');
+  if (el) el.textContent = 'エラー: ' + (e.reason?.message || String(e.reason));
+});
 
 window.loginStudent = async () => {
   const name = document.getElementById('studentName').value.trim();
@@ -751,22 +712,16 @@ function renderRankPills(data) {
   ).join('');
 }
 
-async function renderEntries(data) {
+function renderEntries(data) {
   cachedEntries = data;
   const list = document.getElementById('entryList');
   const uid = currentUser.id, genre = currentGenre;
   if (!data) { list.innerHTML = '<div class="empty">記録がありません</div>'; return; }
   let items = sortEntries(Object.entries(data));
   if (!items.length) { list.innerHTML = '<div class="empty">この条件の記録がありません</div>'; return; }
-  list.innerHTML = '<div class="loading">写真を読み込み中...</div>';
-  // 全エントリの写真URLを並行取得
-  const photoMap = {};
-  await Promise.all(items.map(async ([key]) => {
-    photoMap[key] = await getPhotoUrls(uid, genre, key);
-  }));
   if (entryViewMode === 'grid') {
     list.innerHTML = '<div class="entry-grid">' + items.map(([key, e]) => {
-      const photos = photoMap[key] || [];
+      const photos = getPhotoLocal(uid, genre, key);
       const img = photos.length ? `<img src="${photos[0]}" loading="lazy">` :
         `<div class="grid-cell-noimg"><span class="gc-icon">${genre==='毛筆'?'🖌':'✏️'}</span><span class="gc-date">${e.date}</span></div>`;
       return `<div class="grid-cell" onclick="openDetail('${key}','${e.date}','${encodeURIComponent(e.note||'')}')">
@@ -777,7 +732,7 @@ async function renderEntries(data) {
     }).join('') + '</div>';
   } else {
     list.innerHTML = items.map(([key, e]) => {
-      const photos = photoMap[key] || [];
+      const photos = getPhotoLocal(uid, genre, key);
       const thumbs = photos.length
         ? photos.slice(0,2).map(s => `<img class="entry-thumb" src="${s}">`).join('')
         : `<div class="entry-icon">${genre==='毛筆'?'🖌':'✏️'}</div>`;
@@ -814,60 +769,97 @@ window.askRankChange = (rank) => {
 window.closeConfirm = () => { document.getElementById('confirmOverlay').classList.remove('open'); pendingRank = null; };
 
 // 写真
-// 先生用写真アップロード
-let teacherPendingFiles = [];
-window.handleTeacherPhotos = (e) => {
-  teacherPendingFiles = [...teacherPendingFiles, ...e.target.files];
-  renderTeacherPreviews();
+let pendingPhotos = [];
+window.handlePhotos = (e) => {
+  [...e.target.files].forEach(file => {
+    const r = new FileReader();
+    r.onload = ev => { pendingPhotos.push(ev.target.result); renderPreviews(); };
+    r.readAsDataURL(file);
+  });
   e.target.value = '';
 };
-function renderTeacherPreviews() {
-  document.getElementById('teacherPreviews').innerHTML = teacherPendingFiles.map((f,i) => {
-    const url = URL.createObjectURL(f);
-    return `<div class="prev-wrap"><img src="${url}"><button class="prev-del" onclick="removeTeacherPhoto(${i})">×</button></div>`;
-  }).join('');
+function renderPreviews() {
+  document.getElementById('previews').innerHTML = pendingPhotos.map((s,i) =>
+    `<div class="prev-wrap"><img src="${s}"><button class="prev-del" onclick="removePhoto(${i})">×</button></div>`
+  ).join('');
 }
-window.removeTeacherPhoto = (i) => { teacherPendingFiles.splice(i,1); renderTeacherPreviews(); };
+window.removePhoto = (i) => { pendingPhotos.splice(i,1); renderPreviews(); };
+let teacherPendingFiles = [];
 
 window.addEntry = async () => {
   const date = document.getElementById('fDate').value || today();
   const note = document.getElementById('fNote').value.trim();
-  await push(ref(db, `students/${currentUser.id}/entries/${currentGenre}`), { date, note, ts: Date.now() });
+  const photos = [...pendingPhotos];
+  const newRef = await push(ref(db, `students/${currentUser.id}/entries/${currentGenre}`), { date, note, ts: Date.now() });
+  if (photos.length) savePhotoLocal(currentUser.id, currentGenre, newRef.key, photos);
+  pendingPhotos = [];
+  renderPreviews();
   document.getElementById('fNote').value = '';
 };
 
-let detailCurrentPhotos = [];
-window.openDetail = async (key, date, noteEnc) => {
+let detailPhotos = [];
+let selectedIndexes = new Set();
+
+window.openDetail = (key, date, noteEnc) => {
   const note = decodeURIComponent(noteEnc);
+  detailPhotos = getPhotoLocal(currentUser.id, currentGenre, key);
+  selectedIndexes = new Set();
   document.getElementById('dTitle').textContent = date;
-  document.getElementById('dPhotos').innerHTML = '<div class="loading">読み込み中...</div>';
-  document.getElementById('detailOverlay').classList.add('open');
-  const uid = currentUser.id;
-  const photos = await getPhotoUrls(uid, currentGenre, key);
-  detailCurrentPhotos = photos;
-  const ph = document.getElementById('dPhotos');
-  if (photos.length === 1) ph.innerHTML = `<img class="dphoto-1" src="${photos[0]}">`;
-  else if (photos.length > 1) ph.innerHTML = photos.map(s => `<img class="dphoto-n" src="${s}">`).join('');
-  else ph.innerHTML = '';
   document.getElementById('dDetails').innerHTML = note
     ? `<div class="detail-row"><span class="detail-label">メモ</span><span class="detail-val">${note}</span></div>`
     : '<div style="color:var(--text-sub);font-size:13px">メモなし</div>';
-  // まとめて保存ボタン表示
-  document.getElementById('dSavePhotosBar').style.display = photos.length ? 'block' : 'none';
+  const wrap = document.getElementById('dPhotosWrap');
+  if (!detailPhotos.length) {
+    wrap.style.display = 'none';
+  } else {
+    wrap.style.display = 'block';
+    renderDetailGrid();
+  }
+  document.getElementById('detailOverlay').classList.add('open');
 };
 
-// まとめて保存（各写真を個別ダウンロード）
-window.saveAllPhotosToDevice = async () => {
-  for (let i = 0; i < detailCurrentPhotos.length; i++) {
-    const url = detailCurrentPhotos[i];
+function renderDetailGrid() {
+  document.getElementById('selectAllBtn').textContent = selectedIndexes.size === detailPhotos.length ? '全解除' : '全選択';
+  document.getElementById('dPhotoGrid').innerHTML = detailPhotos.map((src, i) => {
+    const sel = selectedIndexes.has(i);
+    return `<div onclick="toggleSelect(${i})" style="position:relative;cursor:pointer;border-radius:8px;overflow:hidden;border:3px solid ${sel?'#667eea':'transparent'};box-sizing:border-box;aspect-ratio:1">
+      <img src="${src}" style="width:100%;height:100%;object-fit:cover;display:block">
+      <div style="position:absolute;top:5px;right:5px;width:20px;height:20px;border-radius:50%;background:${sel?'#667eea':'rgba(255,255,255,.75)'};border:2px solid ${sel?'#667eea':'rgba(0,0,0,.15)'};display:flex;align-items:center;justify-content:center;font-size:11px;color:${sel?'#fff':'transparent'}">✓</div>
+      <button onclick="event.stopPropagation();saveOnePhoto('${src}',${i})" style="position:absolute;bottom:5px;right:5px;background:rgba(0,0,0,.6);color:#fff;border:none;border-radius:99px;padding:2px 8px;font-size:10px;cursor:pointer">保存</button>
+    </div>`;
+  }).join('');
+}
+
+window.toggleSelect = (i) => {
+  if (selectedIndexes.has(i)) selectedIndexes.delete(i); else selectedIndexes.add(i);
+  renderDetailGrid();
+};
+
+window.toggleSelectAll = () => {
+  if (selectedIndexes.size === detailPhotos.length) selectedIndexes.clear();
+  else detailPhotos.forEach((_,i) => selectedIndexes.add(i));
+  renderDetailGrid();
+};
+
+window.saveOnePhoto = (src, idx) => {
+  const a = document.createElement('a');
+  a.href = src;
+  a.download = `shuji_${idx+1}.jpg`;
+  a.click();
+};
+
+window.saveSelectedPhotos = async () => {
+  const sel = [...selectedIndexes].sort();
+  if (!sel.length) { alert('写真を選択してください'); return; }
+  for (let i = 0; i < sel.length; i++) {
     const a = document.createElement('a');
-    a.href = url;
-    a.download = `shuji_${i+1}.jpg`;
-    a.target = '_blank';
+    a.href = detailPhotos[sel[i]];
+    a.download = `shuji_${sel[i]+1}.jpg`;
     a.click();
-    await new Promise(r => setTimeout(r, 500));
+    await new Promise(r => setTimeout(r, 400));
   }
 };
+
 window.closeDetail = () => document.getElementById('detailOverlay').classList.remove('open');
 
 // 先生
@@ -951,7 +943,6 @@ window.switchTeacherTab = (tab) => {
 window.openStudentDetail = async (uid) => {
   sdCurrentUid = uid;
   document.getElementById('sdRankEditPanel').style.display = 'none';
-  const sdDateEl = document.getElementById('sdTeacherDate'); if(sdDateEl) sdDateEl.value = today();
   document.getElementById('sdExportPdfBtn').dataset.uid = uid;
   document.getElementById('sdExportCsvBtn').dataset.uid = uid;
   // LINE検索キーワード読み込み
@@ -969,48 +960,73 @@ window.openStudentDetail = async (uid) => {
     if (d.entries?.[g]) Object.values(d.entries[g]).forEach(e => all.push({...e, genre:g}));
   });
   all.sort((a,b) => b.ts - a.ts);
-  // 先生には写真を表示しない
+  // 先生の記録ログ：サムネイル表示＋削除ボタン
   const sdEntriesEl = document.getElementById('sdEntries');
-  if (!all.length) {
+  // entryKeyも取得するため再取得
+  let allWithKeys = [];
+  ['毛筆','硬筆'].forEach(g => {
+    if (d.entries?.[g]) Object.entries(d.entries[g]).forEach(([k,e]) => allWithKeys.push({...e, genre:g, key:k}));
+  });
+  allWithKeys.sort((a,b) => b.ts - a.ts);
+  if (!allWithKeys.length) {
     sdEntriesEl.innerHTML = '<div style="color:var(--text-sub);font-size:13px;padding:.5rem 0">記録がありません</div>';
   } else {
-    // まず記録を表示してから写真を非同期で読み込む
-    sdEntriesEl.innerHTML = all.map((e,i) => `<div class="entry-item" id="sd-entry-${i}" style="cursor:default">
-      <div class="entry-icon" id="sd-thumb-${i}" style="width:44px;height:44px;font-size:16px">${e.genre==='毛筆'?'🖌':'✏️'}</div>
-      <div class="entry-meta">
-        <div class="entry-date">${e.date} · ${e.genre}</div>
-        <div class="entry-note">${e.note||'(メモなし)'}</div>
-      </div>
-    </div>`).join('');
-    // 写真を非同期で差し込む
-    all.forEach(async (e, i) => {
-      const urls = await getPhotoUrls(uid, e.genre, e.key);
-      if (urls.length) {
-        const thumbEl = document.getElementById('sd-thumb-'+i);
-        if (thumbEl) thumbEl.innerHTML = `<img src="${urls[0]}" style="width:44px;height:44px;object-fit:cover;border-radius:8px">`;
-      }
-    });
+    sdEntriesEl.innerHTML = allWithKeys.map((e,i) => {
+      const photos = getPhotoLocal(uid, e.genre, e.key);
+      const thumbHtml = photos.length
+        ? photos.slice(0,2).map(s => `<img src="${s}" style="width:44px;height:44px;object-fit:cover;border-radius:6px;border:0.5px solid var(--border)">`).join('')
+        : `<div class="entry-icon" style="width:44px;height:44px;font-size:16px">${e.genre==='毛筆'?'🖌':'✏️'}</div>`;
+      const photoRowHtml = photos.length ? `
+        <div style="display:flex;flex-wrap:wrap;gap:5px;padding:6px 0 4px 0">
+          ${photos.map((s,pi) => `
+            <div style="position:relative">
+              <img src="${s}" style="width:64px;height:64px;object-fit:cover;border-radius:7px;border:0.5px solid var(--border)">
+              <button onclick="deleteLocalPhoto('${uid}','${e.genre}','${e.key}',${pi})" style="position:absolute;top:-5px;right:-5px;width:18px;height:18px;border-radius:50%;background:rgba(220,38,38,.88);color:#fff;border:none;font-size:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1">×</button>
+            </div>`).join('')}
+        </div>` : '';
+      return `<div class="entry-item" style="flex-direction:column;align-items:flex-start;cursor:default;padding:10px 16px">
+        <div style="display:flex;align-items:center;gap:10px;width:100%">
+          <div class="entry-thumb-wrap">${thumbHtml}</div>
+          <div class="entry-meta" style="flex:1">
+            <div class="entry-date">${e.date} · ${e.genre}</div>
+            <div class="entry-note">${e.note||'(メモなし)'}</div>
+            ${photos.length > 1 ? `<div class="entry-sub">写真 ${photos.length}枚</div>` : ''}
+          </div>
+          <button onclick="askDelEntryTeacher('${uid}','${e.key}','${e.date}','${e.genre}')" style="flex-shrink:0;background:rgba(220,38,38,.08);color:#dc2626;border:0.5px solid rgba(220,38,38,.2);border-radius:99px;padding:3px 9px;font-size:11px;cursor:pointer">削除</button>
+        </div>
+        ${photoRowHtml}
+      </div>`;
+    }).join('');
   }
   document.getElementById('studentDetailOverlay').classList.add('open');
 };
-window.closeStudentDetail = () => { document.getElementById('studentDetailOverlay').classList.remove('open'); teacherPendingFiles = []; };
 
-// 先生が生徒の記録に写真をアップロードして保存
-window.addTeacherEntry = async () => {
-  if (!sdCurrentUid) return;
-  const genre = document.getElementById('sdTeacherGenre')?.value || '毛筆';
-  const date = document.getElementById('sdTeacherDate')?.value || today();
-  const note = document.getElementById('sdTeacherNote')?.value?.trim() || '';
-  if (!teacherPendingFiles.length && !note) return;
-  const newRef = await push(ref(db, `students/${sdCurrentUid}/entries/${genre}`), { date, note, ts: Date.now() });
-  if (teacherPendingFiles.length) {
-    await uploadPhotosToStorage(sdCurrentUid, genre, newRef.key, teacherPendingFiles);
-  }
-  teacherPendingFiles = [];
-  renderTeacherPreviews();
-  // 記録一覧を更新
-  openStudentDetail(sdCurrentUid);
+window.closeStudentDetail = () => document.getElementById('studentDetailOverlay').classList.remove('open');
+
+// 先生：ローカル写真を1枚削除
+window.deleteLocalPhoto = (uid, genre, key, idx) => {
+  if (!confirm('この写真を削除しますか？')) return;
+  try {
+    const store = JSON.parse(localStorage.getItem('shuji_photos') || '{}');
+    const k = `${uid}_${genre}_${key}`;
+    if (store[k]) {
+      store[k].splice(idx, 1);
+      if (!store[k].length) delete store[k];
+      localStorage.setItem('shuji_photos', JSON.stringify(store));
+    }
+  } catch(e) {}
+  openStudentDetail(uid);
 };
+
+// 先生：記録を削除（先生モードから）
+let _teacherDelUid=null, _teacherDelKey=null, _teacherDelGenre=null;
+window.askDelEntryTeacher = (uid, key, date, genre) => {
+  _teacherDelUid=uid; _teacherDelKey=key; _teacherDelGenre=genre;
+  document.getElementById('delEntryMsg').textContent = date + ' の記録';
+  document.getElementById('delEntryOverlay').classList.add('open');
+  window._teacherDelMode = true;
+};
+
 
 
 window.saveLineKeyword = async () => {
@@ -1263,9 +1279,21 @@ window.askDelEntry = (key, date) => {
   document.getElementById('delEntryOverlay').classList.add('open');
 };
 window.confirmDelEntry = async () => {
+  if (window._teacherDelMode && _teacherDelUid) {
+    await remove(ref(db, `students/${_teacherDelUid}/entries/${_teacherDelGenre}/${_teacherDelKey}`));
+    try {
+      const store = JSON.parse(localStorage.getItem(LS_PHOTOS) || '{}');
+      delete store[`${_teacherDelUid}_${_teacherDelGenre}_${_teacherDelKey}`];
+      localStorage.setItem(LS_PHOTOS, JSON.stringify(store));
+    } catch(e) {}
+    window._teacherDelMode = false;
+    _teacherDelUid = _teacherDelKey = _teacherDelGenre = null;
+    closeDelEntry();
+    openStudentDetail(sdCurrentUid);
+    return;
+  }
   if (!pendingDelEntryKey) return;
   await remove(ref(db, `students/${currentUser.id}/entries/${currentGenre}/${pendingDelEntryKey}`));
-  // ローカル写真も削除
   try {
     const store = JSON.parse(localStorage.getItem(LS_PHOTOS) || '{}');
     delete store[`${currentUser.id}_${currentGenre}_${pendingDelEntryKey}`];
