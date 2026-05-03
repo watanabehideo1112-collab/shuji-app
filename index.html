@@ -122,6 +122,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--paper);color:var(--t
 .student-updated{font-size:11px;color:var(--text-sub);margin-top:4px}
 
 .overlay{display:none;position:fixed;inset:0;background:rgba(26,26,46,.55);z-index:200;align-items:center;justify-content:center;padding:1rem;backdrop-filter:blur(4px)}
+#confirmOverlay,#historyOverlay,#delEntryOverlay,#delStudentOverlay,#dayPickerOverlay{z-index:400}
 .overlay.open{display:flex}
 .modal{background:#fff;border-radius:20px;width:100%;max-width:400px;padding:1.75rem;box-shadow:var(--shadow-lg)}
 .modal-icon{width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,var(--purple),var(--purple2));display:flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:1rem}
@@ -180,12 +181,14 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--paper);color:var(--t
 /* 削除確認モーダル赤ボタン */
 .modal-danger{flex:1;background:linear-gradient(135deg,#ef4444,#dc2626);color:#fff;border:none;border-radius:var(--radius-sm);padding:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:'Noto Sans JP',sans-serif}
 .day-pick-btn{padding:8px 16px;border-radius:99px;border:0.5px solid var(--border);background:linear-gradient(135deg,var(--purple),var(--purple2));color:#fff;font-size:13px;cursor:pointer;font-family:'Noto Sans JP',sans-serif;font-weight:500}
+.day-memo-tab{padding:4px 10px;border-radius:99px;border:0.5px solid var(--border);background:var(--paper);color:var(--text-sub);font-size:12px;cursor:pointer;font-family:'Noto Sans JP',sans-serif}
+.day-memo-tab.active{background:linear-gradient(135deg,var(--purple),var(--purple2));color:#fff;border-color:transparent}
 .day-pick-btn:hover{opacity:.88}
 .modal-danger:hover{opacity:.9}
 
 /* エクスポート */
-.export-bar{display:flex;gap:8px;padding:10px 16px;border-top:0.5px solid var(--border);background:var(--paper)}
-.export-btn-pdf{flex:1;background:linear-gradient(135deg,#ef4444,#dc2626);color:#fff;border:none;border-radius:var(--radius-sm);padding:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Noto Sans JP',sans-serif}
+.export-bar{display:flex;gap:8px;padding:10px 16px;border-top:0.5px solid var(--border);background:var(--paper);justify-content:center}
+.export-btn-pdf{flex:none;width:100%;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;border:none;border-radius:var(--radius-sm);padding:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Noto Sans JP',sans-serif}
 .export-btn-pdf:hover{opacity:.88}
 .export-btn-csv{flex:1;background:linear-gradient(135deg,#16a34a,#15803d);color:#fff;border:none;border-radius:var(--radius-sm);padding:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Noto Sans JP',sans-serif}
 .export-btn-csv:hover{opacity:.88}
@@ -272,18 +275,18 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--paper);color:var(--t
         </div>
       </div>
 
-
       <div class="card">
         <div class="card-head">
           <span class="card-head-label">記録ログ</span>
-          <div style="display:flex;gap:6px">
-            <button class="small-btn" id="viewToggleBtn" onclick="toggleEntryView()">☰ リスト</button>
+          <div style="display:flex;gap:6px;align-items:center">
+            <button class="small-btn" id="gridSelectAllBtn" onclick="toggleGridSelectAll()" style="display:none">全選択</button>
+            <button class="small-btn" id="gridSaveBtn" onclick="saveGridSelected()" style="display:none;background:linear-gradient(135deg,var(--purple),var(--purple2));color:#fff;border:none;font-weight:700">📥 保存</button>
+            <button class="small-btn" id="gridSelectModeBtn" onclick="toggleGridSelectMode()">選択</button>
           </div>
         </div>
         <div id="entryList"><div class="loading">読み込み中...</div></div>
         <div class="export-bar">
           <button class="export-btn-pdf" onclick="exportMyPDF()">📄 PDFをDL</button>
-          <button class="export-btn-csv" onclick="exportMyCSV()">📊 CSVで保存</button>
         </div>
       </div>
     </div>
@@ -343,12 +346,8 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--paper);color:var(--t
     <h3 id="dTitle"></h3>
     <div id="dDetails" style="margin-bottom:.75rem"></div>
     <div id="dPhotosWrap" style="display:none">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+      <div style="margin-bottom:8px">
         <span style="font-size:11px;font-weight:700;color:var(--text-sub);letter-spacing:.06em">写真</span>
-        <div style="display:flex;gap:6px">
-          <button class="small-btn" onclick="toggleSelectAll()" id="selectAllBtn">全選択</button>
-          <button class="small-btn" style="background:linear-gradient(135deg,var(--purple),var(--purple2));color:#fff;border:none" onclick="saveSelectedPhotos()">📥 選択を保存</button>
-        </div>
       </div>
       <div id="dPhotoGrid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:.75rem"></div>
     </div>
@@ -385,19 +384,73 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--paper);color:var(--t
       <div class="card-head-label" id="sdRankEditLabel" style="margin-bottom:8px">段位を選択</div>
       <div class="rank-pills" id="sdRankPills" style="padding:0;flex-wrap:wrap"></div>
     </div>
-    <div style="margin-bottom:1rem;padding:10px 12px;background:rgba(6,199,85,.06);border:0.5px solid rgba(6,199,85,.2);border-radius:var(--radius-sm)">
-      <div style="font-size:10px;font-weight:700;color:#06a847;letter-spacing:.06em;margin-bottom:6px">LINE 検索キーワード（タップしてコピー）</div>
+    <div style="margin-bottom:.75rem;padding:10px 12px;background:rgba(6,199,85,.06);border:0.5px solid rgba(6,199,85,.2);border-radius:var(--radius-sm)">
+      <div style="font-size:10px;font-weight:700;color:#06a847;letter-spacing:.06em;margin-bottom:6px">LINE 検索キーワード</div>
       <div style="display:flex;gap:6px;align-items:center">
         <input id="lineKeywordInput" type="text" placeholder="例: ふじわら、田中はな など" style="flex:1;font-size:13px;border:0.5px solid rgba(6,199,85,.3);border-radius:var(--radius-sm);padding:7px 10px;background:#fff" />
         <button class="graph-btn" style="background:rgba(6,199,85,.12);color:#06a847;border-color:rgba(6,199,85,.3);flex-shrink:0" onclick="saveLineKeyword()">保存</button>
       </div>
     </div>
+    <!-- 先生メモ欄 -->
+    <div style="margin-bottom:1rem;padding:10px 12px;background:rgba(102,126,234,.05);border:0.5px solid rgba(102,126,234,.2);border-radius:var(--radius-sm)">
+      <div style="font-size:10px;font-weight:700;color:var(--purple2);letter-spacing:.06em;margin-bottom:8px">先生メモ</div>
+      <!-- 個人メモ -->
+      <div style="margin-bottom:8px">
+        <div style="font-size:11px;color:var(--text-sub);margin-bottom:4px">個人メモ（次回への引き継ぎなど）</div>
+        <div style="display:flex;gap:6px;align-items:flex-start">
+          <textarea id="teacherMemoInput" placeholder="例: 右払いに注意、次回は楷書から..." style="flex:1;font-size:13px;border:0.5px solid rgba(102,126,234,.2);border-radius:var(--radius-sm);padding:7px 10px;background:#fff;resize:none;height:52px;font-family:var(--font-sans)"></textarea>
+          <button class="graph-btn" style="background:rgba(102,126,234,.12);color:var(--purple2);border-color:rgba(102,126,234,.3);flex-shrink:0;margin-top:2px" onclick="saveTeacherMemo()">保存</button>
+        </div>
+      </div>
+      <!-- 曜日別メモ -->
+      <div>
+        <div style="font-size:11px;color:var(--text-sub);margin-bottom:6px">曜日別メモ</div>
+        <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:6px">
+          <button class="day-memo-tab active" data-day="mon" onclick="switchDayMemo('mon')">月</button>
+          <button class="day-memo-tab" data-day="tue" onclick="switchDayMemo('tue')">火</button>
+          <button class="day-memo-tab" data-day="wed" onclick="switchDayMemo('wed')">水</button>
+          <button class="day-memo-tab" data-day="thu" onclick="switchDayMemo('thu')">木</button>
+          <button class="day-memo-tab" data-day="fri" onclick="switchDayMemo('fri')">金</button>
+          <button class="day-memo-tab" data-day="sat" onclick="switchDayMemo('sat')">土</button>
+          <button class="day-memo-tab" data-day="sun" onclick="switchDayMemo('sun')">日</button>
+        </div>
+        <div style="display:flex;gap:6px;align-items:flex-start">
+          <textarea id="dayMemoInput" placeholder="例: 月曜クラスは筆圧が課題..." style="flex:1;font-size:13px;border:0.5px solid rgba(102,126,234,.2);border-radius:var(--radius-sm);padding:7px 10px;background:#fff;resize:none;height:52px;font-family:var(--font-sans)"></textarea>
+          <button class="graph-btn" style="background:rgba(102,126,234,.12);color:var(--purple2);border-color:rgba(102,126,234,.3);flex-shrink:0;margin-top:2px" onclick="saveDayMemo()">保存</button>
+        </div>
+      </div>
+    </div>
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px"><div class="card-head-label">記録ログ</div><button class="graph-btn" id="sdHistoryBtn" onclick="openStudentHistory(this.getAttribute('data-uid'))">📈 昇段グラフ</button></div>
-
+    <!-- 先生が写真付き記録を追加 -->
+    <div style="margin-bottom:1rem;padding:10px 12px;background:rgba(102,126,234,.05);border:0.5px solid rgba(102,126,234,.2);border-radius:var(--radius-sm)">
+      <div class="card-head-label" style="margin-bottom:8px">記録を追加（写真付き）</div>
+      <div style="display:flex;gap:8px;margin-bottom:8px">
+        <div style="flex:1">
+          <label style="font-size:11px;color:var(--text-sub);display:block;margin-bottom:3px">書体</label>
+          <select id="sdTeacherGenre" style="width:100%;font-size:13px">
+            <option value="毛筆">毛筆</option>
+            <option value="硬筆">硬筆</option>
+          </select>
+        </div>
+        <div style="flex:1">
+          <label style="font-size:11px;color:var(--text-sub);display:block;margin-bottom:3px">日付</label>
+          <input type="date" id="sdTeacherDate" style="width:100%;font-size:13px" />
+        </div>
+      </div>
+      <div style="margin-bottom:8px">
+        <label style="font-size:11px;color:var(--text-sub);display:block;margin-bottom:3px">メモ（任意）</label>
+        <input type="text" id="sdTeacherNote" placeholder="練習内容など..." style="width:100%;font-size:13px" />
+      </div>
+      <div class="photo-drop" onclick="document.getElementById('teacherPhotoIn').click()" style="margin-bottom:8px">
+        📷 写真を追加（複数可）
+        <input type="file" id="teacherPhotoIn" accept="image/*" multiple style="display:none" onchange="handleTeacherPhotos(event)" />
+      </div>
+      <div class="previews" id="teacherPreviews" style="margin-bottom:8px"></div>
+      <button class="save-btn" style="width:100%" onclick="addTeacherEntry()">記録を保存する</button>
+    </div>
     <div id="sdEntries"></div>
     <div class="export-bar" style="margin-top:1rem;border-top:none;padding:0">
       <button class="export-btn-pdf" id="sdExportPdfBtn" onclick="exportStudentPDF(this.dataset.uid)">📄 PDFをDL</button>
-      <button class="export-btn-csv" id="sdExportCsvBtn" onclick="exportStudentCSV(this.dataset.uid)">📊 CSVで保存</button>
     </div>
     <button class="modal-close" onclick="closeStudentDetail()">閉じる</button>
   </div>
@@ -454,10 +507,11 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--paper);color:var(--t
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getDatabase, ref, set, get, push, onValue, remove } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-storage-compat.js"></script>
+<script>
 
 const firebaseConfig = {
   apiKey: "AIzaSyD2-7r-SZz4uQBHRRQdXqvkqp3rAH3bIVs",
@@ -469,9 +523,10 @@ const firebaseConfig = {
   appId: "1:740389740949:web:896d34bec4645b27dd569c"
 };
 
-const fbApp = initializeApp(firebaseConfig);
-const db = getDatabase(fbApp);
-const auth = getAuth(fbApp);
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+const auth = firebase.auth();
+const storage = firebase.storage();
 
 const RANKS = ['10級','9級','8級','7級','6級','5級','4級','3級','2級','1級','特級','準初段','初段','準2段','2段','準3段','3段','準4段','4段','準5段','5段','準6段','6段','準7段','7段','準8段','8段','準9段','9段','準10段','10段','準優待生','優待生','準特待生','特待生'];
 const TEACHER_PASS = 'shodo2024';
@@ -481,7 +536,7 @@ const LS_PHOTOS = 'shuji_photos';
 
 let currentUser = null, currentGenre = '毛筆', pendingRank = null, pendingPhotos = [], unsubFns = [];
 
-let entryViewMode = 'grid'; // 'grid' or 'list'
+let entryViewMode = 'grid'; // グリッド固定
 let entrySortOrder = 'date-desc';
 let cachedEntries = null;
 let studentSortMode = 'all';
@@ -492,18 +547,31 @@ const DAYS = ['sun','mon','tue','wed','thu','fri','sat'];
 const DAY_LABELS = {mon:'月',tue:'火',wed:'水',thu:'木',fri:'金',sat:'土',sun:'日'};
 
 
-// 写真ローカル管理
-function savePhotoLocal(uid, genre, key, photos) {
-  if (!photos.length) return;
+// 写真URL キャッシュ（Storage URL）
+const photoUrlCache = {};
+
+async function getPhotoUrls(uid, genre, key) {
+  const cacheKey = `${uid}_${genre}_${key}`;
+  if (photoUrlCache[cacheKey]) return photoUrlCache[cacheKey];
   try {
-    const store = JSON.parse(localStorage.getItem(LS_PHOTOS) || '{}');
-    store[`${uid}_${genre}_${key}`] = photos;
-    localStorage.setItem(LS_PHOTOS, JSON.stringify(store));
-  } catch(e) { alert('写真の保存に失敗しました。ストレージ容量をご確認ください。'); }
+    const result = await storage.ref(`photos/${uid}/${genre}/${key}`).listAll();
+    const urls = await Promise.all(result.items.map(item => item.getDownloadURL()));
+    photoUrlCache[cacheKey] = urls;
+    return urls;
+  } catch(e) { return []; }
 }
-function getPhotoLocal(uid, genre, key) {
-  const store = JSON.parse(localStorage.getItem(LS_PHOTOS) || '{}');
-  return store[`${uid}_${genre}_${key}`] || [];
+
+async function uploadPhotosToStorage(uid, genre, entryKey, files) {
+  const urls = [];
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i];
+    const path = `photos/${uid}/${genre}/${entryKey}/${i}_${Date.now()}`;
+    const uploadTask = await storage.ref(path).put(file);
+    const url = await uploadTask.ref.getDownloadURL();
+    urls.push(url);
+  }
+  photoUrlCache[`${uid}_${genre}_${entryKey}`] = urls;
+  return urls;
 }
 
 function today() { return new Date().toISOString().slice(0,10); }
@@ -534,16 +602,6 @@ window.switchAuthTab = (tab) => {
   document.getElementById('authError').textContent = '';
 };
 
-// デバッグ用：JSエラーを画面に表示
-window.addEventListener('error', (e) => {
-  const el = document.getElementById('authError');
-  if (el) el.textContent = 'JSエラー: ' + e.message;
-});
-window.addEventListener('unhandledrejection', (e) => {
-  const el = document.getElementById('authError');
-  if (el) el.textContent = 'エラー: ' + (e.reason?.message || String(e.reason));
-});
-
 window.loginStudent = async () => {
   const name = document.getElementById('studentName').value.trim();
   const pass = document.getElementById('studentPass').value.trim();
@@ -554,8 +612,8 @@ window.loginStudent = async () => {
   const authPass = pass + '_shodo';
   err.textContent = 'ログイン中...';
   try {
-    const cred = await signInWithEmailAndPassword(auth, email, authPass);
-    const snap = await get(ref(db, `students/${cred.user.uid}/display`));
+    const cred = await auth.signInWithEmailAndPassword(email, authPass);
+    const snap = await db.ref(`students/${cred.user.uid}/display`).once('value');
     currentUser = { id: cred.user.uid, display: snap.val() || name, isTeacher: false };
     err.textContent = '';
     startApp();
@@ -580,8 +638,8 @@ window.registerStudent = async () => {
   const authPass = pass + '_shodo';
   err.textContent = '登録中...';
   try {
-    const cred = await createUserWithEmailAndPassword(auth, email, authPass);
-    await set(ref(db, `students/${cred.user.uid}/display`), name);
+    const cred = await auth.createUserWithEmailAndPassword( email, authPass);
+    await db.ref(`students/${cred.user.uid}/display`).set(name);
     currentUser = { id: cred.user.uid, display: name, isTeacher: false };
     err.textContent = '';
     startApp();
@@ -600,27 +658,36 @@ window.loginAsTeacher = async () => {
   if (pass !== TEACHER_PASS) { err.textContent = 'パスワードが違います'; return; }
   err.textContent = 'ログイン中...';
   try {
-    await signInWithEmailAndPassword(auth, TEACHER_EMAIL, TEACHER_PASS + '_teacher_secret');
-  } catch(e) {
-    // 先生アカウントが未作成なら作成
-    if (e.code === 'auth/invalid-credential' || e.code === 'auth/user-not-found') {
-      try {
-        await createUserWithEmailAndPassword(auth, TEACHER_EMAIL, TEACHER_PASS + '_teacher_secret');
-      } catch(e2) { /* すでに存在する場合は無視 */ }
-      await signInWithEmailAndPassword(auth, TEACHER_EMAIL, TEACHER_PASS + '_teacher_secret');
+    // まずサインイン試行
+    try {
+      await auth.signInWithEmailAndPassword(TEACHER_EMAIL, TEACHER_PASS + '_teacher_secret');
+    } catch(e) {
+      // 未作成 or 認証エラーなら新規作成してからサインイン
+      if (e.code === 'auth/invalid-credential' || e.code === 'auth/user-not-found' || e.code === 'auth/wrong-password') {
+        try {
+          await auth.createUserWithEmailAndPassword(TEACHER_EMAIL, TEACHER_PASS + '_teacher_secret');
+        } catch(e2) {
+          if (e2.code !== 'auth/email-already-in-use') throw e2;
+        }
+        await auth.signInWithEmailAndPassword(TEACHER_EMAIL, TEACHER_PASS + '_teacher_secret');
+      } else {
+        throw e;
+      }
     }
+    const uid = auth.currentUser.uid;
+    currentUser = { id: uid, display: '先生', isTeacher: true };
+    await db.ref('teacher/uid').set(uid);
+    err.textContent = '';
+    startApp();
+  } catch(e) {
+    err.textContent = 'エラー: ' + e.code + ' ' + e.message;
   }
-  currentUser = { id: auth.currentUser.uid, display: '先生', isTeacher: true };
-  // 先生UIDをDBに登録（ルール対応のため）
-  await set(ref(db, `teacher/uid`), auth.currentUser.uid);
-  err.textContent = '';
-  startApp();
 };
 
 window.logout = async () => {
-  unsubFns.forEach(f => f()); unsubFns = [];
+  unsubFns.forEach(f => { try { f(); } catch(e) {} }); unsubFns = [];
   currentUser = null;
-  try { await signOut(auth); } catch(e) {}
+  try { await auth.signOut(); } catch(e) {}
   document.getElementById('appScreen').style.display = 'none';
   document.getElementById('authScreen').style.display = 'flex';
   document.getElementById('studentName').value = '';
@@ -634,7 +701,7 @@ window.logout = async () => {
 function startApp() {
   document.getElementById('authScreen').style.display = 'none';
   document.getElementById('appScreen').style.display = 'block';
-  document.getElementById('fDate').value = today();
+  const fDateEl = document.getElementById('fDate'); if (fDateEl) fDateEl.value = today();
   document.getElementById('topName').textContent = currentUser.display;
   if (currentUser.isTeacher) {
     document.getElementById('topRole').textContent = '先生';
@@ -653,18 +720,18 @@ function startApp() {
 }
 
 // 自動ログイン（Firebase Auth状態監視）
-onAuthStateChanged(auth, async (user) => {
+auth.onAuthStateChanged(async (user) => {
   if (currentUser) return;
   if (!user) return;
   try {
     // 先生かどうか判定
-    const teacherSnap = await get(ref(db, 'teacher/uid'));
+    const teacherSnap = await db.ref('teacher/uid').once('value');
     if (teacherSnap.val() === user.uid) {
       currentUser = { id: user.uid, display: '先生', isTeacher: true };
       startApp();
       return;
     }
-    const snap = await get(ref(db, `students/${user.uid}/display`));
+    const snap = await db.ref(`students/${user.uid}/display`).once('value');
     if (snap.exists()) {
       currentUser = { id: user.uid, display: snap.val(), isTeacher: false };
       startApp();
@@ -675,12 +742,12 @@ onAuthStateChanged(auth, async (user) => {
 // 生徒リスナー
 function listenStudent() {
   const uid = currentUser.id;
-  unsubFns.push(onValue(ref(db, `students/${uid}/ranks`), snap => {
+  unsubFns.push(db.ref(`students/${uid}/ranks`).on('value', snap => {
     const d = snap.val() || {};
     renderHero(d); renderRankPills(d);
   }));
   ['毛筆','硬筆'].forEach(g => {
-    unsubFns.push(onValue(ref(db, `students/${uid}/entries/${g}`), snap => {
+    unsubFns.push(db.ref(`students/${uid}/entries/${g}`).on('value', snap => {
       if (currentGenre === g) renderEntries(snap.val());
     }));
   });
@@ -691,12 +758,12 @@ window.switchGenre = (genre) => {
   ['毛筆','硬筆'].forEach(g => document.getElementById('stab-'+g)?.classList.toggle('inactive', g !== genre));
   document.getElementById('heroCard').className = 'hero-card genre-' + genre;
   document.getElementById('heroBadge').textContent = genre;
-  document.getElementById('saveBtn').className = 'save-btn genre-' + genre;
+  const saveBtnEl = document.getElementById('saveBtn'); if(saveBtnEl) saveBtnEl.className = 'save-btn genre-' + genre;
   document.getElementById('rankListWrap').style.display = 'none';
   document.getElementById('rankToggleBtn').textContent = '一覧を表示';
   const uid = currentUser.id;
-  get(ref(db, `students/${uid}/ranks`)).then(s => { renderHero(s.val()||{}); renderRankPills(s.val()||{}); });
-  get(ref(db, `students/${uid}/entries/${genre}`)).then(s => renderEntries(s.val()));
+  db.ref(`students/${uid}/ranks`).once('value').then(s => { renderHero(s.val()||{}); renderRankPills(s.val()||{}); });
+  // 記録ログは毛筆・硬筆合算表示のためswitchGenreでは更新しない
 };
 
 function renderHero(data) {
@@ -715,39 +782,162 @@ function renderRankPills(data) {
 function renderEntries(data) {
   cachedEntries = data;
   const list = document.getElementById('entryList');
-  const uid = currentUser.id, genre = currentGenre;
+  const uid = currentUser.id;
   if (!data) { list.innerHTML = '<div class="empty">記録がありません</div>'; return; }
   let items = sortEntries(Object.entries(data));
-  if (!items.length) { list.innerHTML = '<div class="empty">この条件の記録がありません</div>'; return; }
-  if (entryViewMode === 'grid') {
-    list.innerHTML = '<div class="entry-grid">' + items.map(([key, e]) => {
-      const photos = getPhotoLocal(uid, genre, key);
-      const img = photos.length ? `<img src="${photos[0]}" loading="lazy">` :
-        `<div class="grid-cell-noimg"><span class="gc-icon">${genre==='毛筆'?'🖌':'✏️'}</span><span class="gc-date">${e.date}</span></div>`;
-      return `<div class="grid-cell" onclick="openDetail('${key}','${e.date}','${encodeURIComponent(e.note||'')}')">
-        ${img}
-        ${photos.length?`<div class="grid-cell-overlay"><div class="gc-date2">${e.date}</div></div>`:''}
-        <button class="grid-cell-del" onclick="event.stopPropagation();askDelEntry('${key}','${e.date}')">✕</button>
-      </div>`;
-    }).join('') + '</div>';
-  } else {
-    list.innerHTML = items.map(([key, e]) => {
-      const photos = getPhotoLocal(uid, genre, key);
-      const thumbs = photos.length
-        ? photos.slice(0,2).map(s => `<img class="entry-thumb" src="${s}">`).join('')
-        : `<div class="entry-icon">${genre==='毛筆'?'🖌':'✏️'}</div>`;
-      return `<div class="entry-item" onclick="openDetail('${key}','${e.date}','${encodeURIComponent(e.note||'')}')">
-        <div class="entry-thumb-wrap">${thumbs}</div>
-        <div class="entry-meta">
-          <div class="entry-date">${e.date}</div>
-          <div class="entry-note">${e.note||'(メモなし)'}</div>
-          ${photos.length>1?`<div class="entry-sub">写真 ${photos.length}枚</div>`:''}
-        </div>
-        <button style="flex-shrink:0;background:rgba(220,38,38,.08);color:#dc2626;border:0.5px solid rgba(220,38,38,.2);border-radius:99px;padding:3px 9px;font-size:11px;cursor:pointer" onclick="event.stopPropagation();askDelEntry('${key}','${e.date}')">削除</button>
-      </div>`;
-    }).join('');
-  }
+  if (!items.length) { list.innerHTML = '<div class="empty">記録がありません</div>'; return; }
+  // まず絵文字プレースホルダーで即表示
+  list.innerHTML = '<div class="entry-grid">' + items.map(([key, e]) => {
+    const genre = e.genre || currentGenre;
+    return `<div class="grid-cell" id="gc-${key}" onclick="handleGridClick('${key}','${e.date}','${encodeURIComponent(e.note||'')}','${genre}')">
+      <div class="grid-cell-noimg" id="gc-inner-${key}">
+        <span class="gc-icon">${genre==='毛筆'?'🖌':'✏️'}</span>
+        <span class="gc-date">${e.date}</span>
+      </div>
+      <div class="grid-cell-overlay" id="gc-date-${key}" style="display:none"><div class="gc-date2">${e.date}</div></div>
+    </div>`;
+  }).join('') + '</div>';
+  // 写真を非同期で後から差し込む
+  items.forEach(([key, e]) => {
+    const genre = e.genre || currentGenre;
+    getPhotoUrls(uid, genre, key).then(urls => {
+      if (!urls.length) return;
+      const inner = document.getElementById('gc-inner-'+key);
+      const dateEl = document.getElementById('gc-date-'+key);
+      const cell = document.getElementById('gc-'+key);
+      if (inner) inner.outerHTML = `<img src="${urls[0]}" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block">`;
+      if (dateEl) dateEl.style.display = 'block';
+      if (cell) cell.dataset.urls = JSON.stringify(urls);
+    });
+  });
 }
+
+
+// ── グリッド一括選択モード ──
+let gridSelectMode = false;
+let gridSelectedPhotos = [];
+
+window.toggleGridSelectMode = () => {
+  gridSelectMode = !gridSelectMode;
+  document.getElementById('gridSelectModeBtn').textContent = gridSelectMode ? 'キャンセル' : '選択';
+  document.getElementById('gridSelectAllBtn').style.display = gridSelectMode ? 'inline-flex' : 'none';
+  document.getElementById('gridSaveBtn').style.display = gridSelectMode ? 'inline-flex' : 'none';
+  gridSelectedPhotos = [];
+  // グリッドのチェックマークをリセット
+  document.querySelectorAll('[id^="gc-chk-"]').forEach(el => el.remove());
+  document.querySelectorAll('[id^="gc-"]').forEach(el => {
+    if (el.id.startsWith('gc-') && !el.id.startsWith('gc-inner') && !el.id.startsWith('gc-date') && !el.id.startsWith('gc-chk')) {
+      el.style.border = 'none';
+    }
+  });
+  const saveBtn = document.getElementById('gridSaveBtn');
+  if (saveBtn) saveBtn.textContent = '📥 保存';
+};
+
+window.toggleGridSelectAll = () => {
+  if (!cachedEntries) return;
+  const items = Object.entries(cachedEntries);
+  // 全セルのdataset.urlsを収集
+  let allPhotos = [];
+  items.forEach(([key, e]) => {
+    const cell = document.getElementById('gc-'+key);
+    if (cell && cell.dataset.urls) {
+      const urls = JSON.parse(cell.dataset.urls);
+      const date = e.date;
+      urls.forEach(url => allPhotos.push({ url, date }));
+    }
+  });
+  const btn = document.getElementById('gridSelectAllBtn');
+  if (gridSelectedPhotos.length === allPhotos.length && allPhotos.length > 0) {
+    // 全解除
+    gridSelectedPhotos = [];
+    btn.textContent = '全選択';
+    document.querySelectorAll('[id^="gc-chk-"]').forEach(el => {
+      el.style.background = 'rgba(255,255,255,.75)';
+      el.style.border = '2px solid rgba(0,0,0,.15)';
+      el.textContent = '';
+    });
+    document.querySelectorAll('[id^="gc-"]').forEach(el => {
+      if (el.id.match(/^gc-[^-]+$/) && el.tagName === 'DIV') el.style.border = 'none';
+    });
+  } else {
+    // 全選択
+    gridSelectedPhotos = allPhotos;
+    btn.textContent = '全解除';
+    items.forEach(([key]) => {
+      const cell = document.getElementById('gc-'+key);
+      if (!cell || !cell.dataset.urls) return;
+      cell.style.border = '3px solid #667eea';
+      cell.style.borderRadius = '9px';
+      cell.style.overflow = 'hidden';
+      let chk = document.getElementById('gc-chk-'+key);
+      if (!chk) {
+        chk = document.createElement('div');
+        chk.id = 'gc-chk-'+key;
+        chk.style.cssText = 'position:absolute;top:5px;right:5px;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;pointer-events:none';
+        cell.appendChild(chk);
+      }
+      chk.style.background = '#667eea';
+      chk.style.border = '2px solid #667eea';
+      chk.textContent = '✓';
+      chk.style.color = '#fff';
+    });
+  }
+  const saveBtn = document.getElementById('gridSaveBtn');
+  if (saveBtn) saveBtn.textContent = gridSelectedPhotos.length > 0 ? `📥 保存(${gridSelectedPhotos.length}枚)` : '📥 保存';
+};
+
+window.saveGridSelected = async () => {
+  if (!gridSelectedPhotos.length) { alert('写真を選択してください'); return; }
+  const saveBtn = document.getElementById('gridSaveBtn');
+  if (saveBtn) { saveBtn.textContent = '保存中...'; saveBtn.disabled = true; }
+  for (let i = 0; i < gridSelectedPhotos.length; i++) {
+    const a = document.createElement('a');
+    a.href = gridSelectedPhotos[i].url;
+    a.download = `shuji_${gridSelectedPhotos[i].date}_${i+1}.jpg`;
+    a.target = '_blank';
+    a.click();
+    await new Promise(r => setTimeout(r, 400));
+  }
+  if (saveBtn) { saveBtn.textContent = `📥 保存(${gridSelectedPhotos.length}枚)`; saveBtn.disabled = false; }
+};
+
+window.handleGridClick = (key, date, noteEnc, genre) => {
+  if (gridSelectMode) {
+    const cell = document.getElementById('gc-'+key);
+    const urls = cell && cell.dataset.urls ? JSON.parse(cell.dataset.urls) : [];
+    if (!urls.length) return;
+    urls.forEach(url => {
+      const idx = gridSelectedPhotos.findIndex(p => p.url === url);
+      if (idx >= 0) gridSelectedPhotos.splice(idx, 1);
+      else gridSelectedPhotos.push({ url, date });
+    });
+    // 選択状態の視覚更新
+    const allUrls = urls.map(u => u);
+    const isSel = allUrls.some(u => gridSelectedPhotos.find(p => p.url === u));
+    if (cell) {
+      cell.style.border = isSel ? '3px solid #667eea' : 'none';
+      cell.style.borderRadius = isSel ? '9px' : '';
+      cell.style.overflow = 'hidden';
+    }
+    // セル内にチェックマーク
+    let chk = document.getElementById('gc-chk-'+key);
+    if (!chk) {
+      chk = document.createElement('div');
+      chk.id = 'gc-chk-'+key;
+      chk.style.cssText = 'position:absolute;top:5px;right:5px;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;pointer-events:none';
+      if (cell) cell.appendChild(chk);
+    }
+    chk.style.background = isSel ? '#667eea' : 'rgba(255,255,255,.75)';
+    chk.style.border = isSel ? '2px solid #667eea' : '2px solid rgba(0,0,0,.15)';
+    chk.textContent = isSel ? '✓' : '';
+    chk.style.color = isSel ? '#fff' : 'transparent';
+    const saveBtn = document.getElementById('gridSaveBtn');
+    if (saveBtn) saveBtn.textContent = gridSelectedPhotos.length > 0 ? `📥 保存(${gridSelectedPhotos.length}枚)` : '📥 保存';
+  } else {
+    openDetail(key, date, noteEnc, genre);
+  }
+};
 
 window.toggleRankList = () => {
   const w = document.getElementById('rankListWrap'), btn = document.getElementById('rankToggleBtn');
@@ -757,7 +947,7 @@ window.toggleRankList = () => {
 };
 
 window.askRankChange = (rank) => {
-  get(ref(db, `students/${currentUser.id}/ranks/${currentGenre}`)).then(snap => {
+  db.ref(`students/${currentUser.id}/ranks/${currentGenre}`).once('value').then(snap => {
     const cur = (snap.val()||{}).rank || '未設定';
     if (rank === cur) return;
     pendingRank = rank;
@@ -769,92 +959,94 @@ window.askRankChange = (rank) => {
 window.closeConfirm = () => { document.getElementById('confirmOverlay').classList.remove('open'); pendingRank = null; };
 
 // 写真
-let pendingPhotos = [];
-window.handlePhotos = (e) => {
-  [...e.target.files].forEach(file => {
-    const r = new FileReader();
-    r.onload = ev => { pendingPhotos.push(ev.target.result); renderPreviews(); };
-    r.readAsDataURL(file);
-  });
+// 先生用写真アップロード
+let teacherPendingFiles = [];
+window.handleTeacherPhotos = (e) => {
+  teacherPendingFiles = [...teacherPendingFiles, ...e.target.files];
+  renderTeacherPreviews();
   e.target.value = '';
 };
-function renderPreviews() {
-  document.getElementById('previews').innerHTML = pendingPhotos.map((s,i) =>
-    `<div class="prev-wrap"><img src="${s}"><button class="prev-del" onclick="removePhoto(${i})">×</button></div>`
-  ).join('');
+function renderTeacherPreviews() {
+  document.getElementById('teacherPreviews').innerHTML = teacherPendingFiles.map((f,i) => {
+    const url = URL.createObjectURL(f);
+    return `<div class="prev-wrap"><img src="${url}"><button class="prev-del" onclick="removeTeacherPhoto(${i})">×</button></div>`;
+  }).join('');
 }
-window.removePhoto = (i) => { pendingPhotos.splice(i,1); renderPreviews(); };
-let teacherPendingFiles = [];
+window.removeTeacherPhoto = (i) => { teacherPendingFiles.splice(i,1); renderTeacherPreviews(); };
 
 window.addEntry = async () => {
   const date = document.getElementById('fDate').value || today();
   const note = document.getElementById('fNote').value.trim();
-  const photos = [...pendingPhotos];
-  const newRef = await push(ref(db, `students/${currentUser.id}/entries/${currentGenre}`), { date, note, ts: Date.now() });
-  if (photos.length) savePhotoLocal(currentUser.id, currentGenre, newRef.key, photos);
-  pendingPhotos = [];
-  renderPreviews();
+  await db.ref(`students/${currentUser.id}/entries/${currentGenre}`).push({ date, note, ts: Date.now() });
   document.getElementById('fNote').value = '';
 };
 
-let detailPhotos = [];
-let selectedIndexes = new Set();
+let detailCurrentPhotos = [];
+let detailSelectedIndexes = new Set();
 
-window.openDetail = (key, date, noteEnc) => {
+window.openDetail = async (key, date, noteEnc, genre) => {
   const note = decodeURIComponent(noteEnc);
-  detailPhotos = getPhotoLocal(currentUser.id, currentGenre, key);
-  selectedIndexes = new Set();
+  const g = genre || currentGenre;
+  detailSelectedIndexes = new Set();
   document.getElementById('dTitle').textContent = date;
   document.getElementById('dDetails').innerHTML = note
     ? `<div class="detail-row"><span class="detail-label">メモ</span><span class="detail-val">${note}</span></div>`
     : '<div style="color:var(--text-sub);font-size:13px">メモなし</div>';
-  const wrap = document.getElementById('dPhotosWrap');
-  if (!detailPhotos.length) {
-    wrap.style.display = 'none';
+  document.getElementById('dPhotoGrid').innerHTML = '<div class="loading">読み込み中...</div>';
+  document.getElementById('dPhotosWrap').style.display = 'block';
+  document.getElementById('detailOverlay').classList.add('open');
+  const uid = currentUser.id;
+  const photos = await getPhotoUrls(uid, g, key);
+  detailCurrentPhotos = photos;
+  if (!photos.length) {
+    document.getElementById('dPhotosWrap').style.display = 'none';
+    document.getElementById('dPhotoActions').style.display = 'none';
   } else {
-    wrap.style.display = 'block';
     renderDetailGrid();
   }
-  document.getElementById('detailOverlay').classList.add('open');
 };
 
 function renderDetailGrid() {
-  document.getElementById('selectAllBtn').textContent = selectedIndexes.size === detailPhotos.length ? '全解除' : '全選択';
-  document.getElementById('dPhotoGrid').innerHTML = detailPhotos.map((src, i) => {
-    const sel = selectedIndexes.has(i);
-    return `<div onclick="toggleSelect(${i})" style="position:relative;cursor:pointer;border-radius:8px;overflow:hidden;border:3px solid ${sel?'#667eea':'transparent'};box-sizing:border-box;aspect-ratio:1">
-      <img src="${src}" style="width:100%;height:100%;object-fit:cover;display:block">
+  const allSel = detailSelectedIndexes.size === detailCurrentPhotos.length && detailCurrentPhotos.length > 0;
+  document.getElementById('selectAllBtn').textContent = allSel ? '全解除' : '全選択';
+  document.getElementById('dPhotoGrid').innerHTML = detailCurrentPhotos.map((url, i) => {
+    const sel = detailSelectedIndexes.has(i);
+    return `<div onclick="togglePhotoSel(${i})" style="position:relative;cursor:pointer;border-radius:8px;overflow:hidden;border:3px solid ${sel?'#667eea':'transparent'};box-sizing:border-box;aspect-ratio:1">
+      <img src="${url}" style="width:100%;height:100%;object-fit:cover;display:block">
       <div style="position:absolute;top:5px;right:5px;width:20px;height:20px;border-radius:50%;background:${sel?'#667eea':'rgba(255,255,255,.75)'};border:2px solid ${sel?'#667eea':'rgba(0,0,0,.15)'};display:flex;align-items:center;justify-content:center;font-size:11px;color:${sel?'#fff':'transparent'}">✓</div>
-      <button onclick="event.stopPropagation();saveOnePhoto('${src}',${i})" style="position:absolute;bottom:5px;right:5px;background:rgba(0,0,0,.6);color:#fff;border:none;border-radius:99px;padding:2px 8px;font-size:10px;cursor:pointer">保存</button>
+      <button onclick="event.stopPropagation();saveOnePhoto('${url}',${i})" style="position:absolute;bottom:5px;right:5px;background:rgba(0,0,0,.6);color:#fff;border:none;border-radius:99px;padding:2px 8px;font-size:10px;cursor:pointer;font-family:var(--font-sans)">保存</button>
     </div>`;
   }).join('');
 }
 
-window.toggleSelect = (i) => {
-  if (selectedIndexes.has(i)) selectedIndexes.delete(i); else selectedIndexes.add(i);
+window.togglePhotoSel = (i) => {
+  if (detailSelectedIndexes.has(i)) detailSelectedIndexes.delete(i);
+  else detailSelectedIndexes.add(i);
   renderDetailGrid();
 };
 
 window.toggleSelectAll = () => {
-  if (selectedIndexes.size === detailPhotos.length) selectedIndexes.clear();
-  else detailPhotos.forEach((_,i) => selectedIndexes.add(i));
+  if (detailSelectedIndexes.size === detailCurrentPhotos.length) detailSelectedIndexes.clear();
+  else detailCurrentPhotos.forEach((_,i) => detailSelectedIndexes.add(i));
   renderDetailGrid();
 };
 
-window.saveOnePhoto = (src, idx) => {
+window.saveOnePhoto = (url, idx) => {
   const a = document.createElement('a');
-  a.href = src;
+  a.href = url;
   a.download = `shuji_${idx+1}.jpg`;
+  a.target = '_blank';
   a.click();
 };
 
 window.saveSelectedPhotos = async () => {
-  const sel = [...selectedIndexes].sort();
+  const sel = [...detailSelectedIndexes].sort();
   if (!sel.length) { alert('写真を選択してください'); return; }
   for (let i = 0; i < sel.length; i++) {
     const a = document.createElement('a');
-    a.href = detailPhotos[sel[i]];
+    a.href = detailCurrentPhotos[sel[i]];
     a.download = `shuji_${sel[i]+1}.jpg`;
+    a.target = '_blank';
     a.click();
     await new Promise(r => setTimeout(r, 400));
   }
@@ -864,7 +1056,7 @@ window.closeDetail = () => document.getElementById('detailOverlay').classList.re
 
 // 先生
 function listenTeacher() {
-  unsubFns.push(onValue(ref(db, 'students'), snap => {
+  unsubFns.push(db.ref('students').on('value', snap => {
     const data = snap.val() || {};
     renderStudentList(data); renderFeed(data);
   }));
@@ -943,13 +1135,13 @@ window.switchTeacherTab = (tab) => {
 window.openStudentDetail = async (uid) => {
   sdCurrentUid = uid;
   document.getElementById('sdRankEditPanel').style.display = 'none';
-  document.getElementById('sdExportPdfBtn').dataset.uid = uid;
-  document.getElementById('sdExportCsvBtn').dataset.uid = uid;
+  const sdDateEl = document.getElementById('sdTeacherDate'); if(sdDateEl) sdDateEl.value = today();
+  const pdfBtn = document.getElementById('sdExportPdfBtn'); if(pdfBtn) pdfBtn.dataset.uid = uid;
   // LINE検索キーワード読み込み
-  get(ref(db, `students/${uid}/lineKeyword`)).then(snap => {
+  db.ref(`students/${uid}/lineKeyword`).once('value').then(snap => {
     document.getElementById('lineKeywordInput').value = snap.val() || '';
   });
-  const snap = await get(ref(db, `students/${uid}`));
+  const snap = await db.ref(`students/${uid}`).once('value');
   const d = snap.val() || {};
   document.getElementById('sdTitle').textContent = (d.display||uid) + ' さん';
   document.getElementById('sdHistoryBtn').setAttribute('data-uid', uid);
@@ -957,85 +1149,147 @@ window.openStudentDetail = async (uid) => {
   renderSdRanks(ranks);
   let all = [];
   ['毛筆','硬筆'].forEach(g => {
-    if (d.entries?.[g]) Object.values(d.entries[g]).forEach(e => all.push({...e, genre:g}));
+    if (d.entries?.[g]) Object.entries(d.entries[g]).forEach(([k,e]) => all.push({...e, genre:g, key:k}));
   });
   all.sort((a,b) => b.ts - a.ts);
-  // 先生の記録ログ：サムネイル表示＋削除ボタン
   const sdEntriesEl = document.getElementById('sdEntries');
-  // entryKeyも取得するため再取得
-  let allWithKeys = [];
-  ['毛筆','硬筆'].forEach(g => {
-    if (d.entries?.[g]) Object.entries(d.entries[g]).forEach(([k,e]) => allWithKeys.push({...e, genre:g, key:k}));
-  });
-  allWithKeys.sort((a,b) => b.ts - a.ts);
-  if (!allWithKeys.length) {
+  if (!all.length) {
     sdEntriesEl.innerHTML = '<div style="color:var(--text-sub);font-size:13px;padding:.5rem 0">記録がありません</div>';
   } else {
-    sdEntriesEl.innerHTML = allWithKeys.map((e,i) => {
-      const photos = getPhotoLocal(uid, e.genre, e.key);
-      const thumbHtml = photos.length
-        ? photos.slice(0,2).map(s => `<img src="${s}" style="width:44px;height:44px;object-fit:cover;border-radius:6px;border:0.5px solid var(--border)">`).join('')
-        : `<div class="entry-icon" style="width:44px;height:44px;font-size:16px">${e.genre==='毛筆'?'🖌':'✏️'}</div>`;
-      const photoRowHtml = photos.length ? `
-        <div style="display:flex;flex-wrap:wrap;gap:5px;padding:6px 0 4px 0">
-          ${photos.map((s,pi) => `
-            <div style="position:relative">
-              <img src="${s}" style="width:64px;height:64px;object-fit:cover;border-radius:7px;border:0.5px solid var(--border)">
-              <button onclick="deleteLocalPhoto('${uid}','${e.genre}','${e.key}',${pi})" style="position:absolute;top:-5px;right:-5px;width:18px;height:18px;border-radius:50%;background:rgba(220,38,38,.88);color:#fff;border:none;font-size:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1">×</button>
-            </div>`).join('')}
-        </div>` : '';
-      return `<div class="entry-item" style="flex-direction:column;align-items:flex-start;cursor:default;padding:10px 16px">
-        <div style="display:flex;align-items:center;gap:10px;width:100%">
-          <div class="entry-thumb-wrap">${thumbHtml}</div>
-          <div class="entry-meta" style="flex:1">
-            <div class="entry-date">${e.date} · ${e.genre}</div>
-            <div class="entry-note">${e.note||'(メモなし)'}</div>
-            ${photos.length > 1 ? `<div class="entry-sub">写真 ${photos.length}枚</div>` : ''}
+    sdEntriesEl.innerHTML = all.map((e,i) => `
+      <div style="padding:10px 16px;border-bottom:0.5px solid var(--border)">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div id="sd-thumb-${i}" style="width:48px;height:48px;flex-shrink:0;border-radius:8px;background:var(--paper);display:flex;align-items:center;justify-content:center;font-size:22px;overflow:hidden;border:0.5px solid var(--border)">
+            ${e.genre==='毛筆'?'🖌':'✏️'}
           </div>
-          <button onclick="askDelEntryTeacher('${uid}','${e.key}','${e.date}','${e.genre}')" style="flex-shrink:0;background:rgba(220,38,38,.08);color:#dc2626;border:0.5px solid rgba(220,38,38,.2);border-radius:99px;padding:3px 9px;font-size:11px;cursor:pointer">削除</button>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:12px;color:var(--text-sub);margin-bottom:2px">${e.date} · ${e.genre}</div>
+            <div style="font-size:13px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${e.note||'(メモなし)'}</div>
+          </div>
+          <button onclick="askDelEntryTeacher('${uid}','${e.key}','${e.date}','${e.genre}')" style="flex-shrink:0;background:rgba(220,38,38,.08);color:#dc2626;border:0.5px solid rgba(220,38,38,.2);border-radius:99px;padding:3px 9px;font-size:11px;cursor:pointer;font-family:var(--font-sans)">削除</button>
         </div>
-        ${photoRowHtml}
-      </div>`;
-    }).join('');
+        <div id="sd-photos-${i}" style="display:flex;flex-wrap:wrap;gap:5px;margin-top:8px;padding-left:58px"></div>
+      </div>`
+    ).join('');
+    // 写真を非同期でサムネ差し込み＋削除ボタン付き
+    all.forEach(async (e, i) => {
+      const urls = await getPhotoUrls(uid, e.genre, e.key);
+      if (!urls.length) return;
+      // サムネ更新
+      const thumbEl = document.getElementById('sd-thumb-'+i);
+      if (thumbEl) thumbEl.innerHTML = `<img src="${urls[0]}" style="width:44px;height:44px;object-fit:cover;border-radius:8px">`;
+      // 写真一覧表示＋削除ボタン
+      const photosEl = document.getElementById('sd-photos-'+i);
+      if (photosEl) {
+        photosEl.innerHTML = urls.map((url, pi) =>
+          `<div style="position:relative">
+            <img src="${url}" style="width:72px;height:72px;object-fit:cover;border-radius:8px;border:0.5px solid var(--border)">
+            <button onclick="deleteStoragePhoto('${uid}','${e.genre}','${e.key}',${pi})" style="position:absolute;top:-5px;right:-5px;width:18px;height:18px;border-radius:50%;background:rgba(220,38,38,.88);color:#fff;border:none;font-size:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1">×</button>
+          </div>`
+        ).join('');
+      }
+    });
   }
   document.getElementById('studentDetailOverlay').classList.add('open');
 };
+window.closeStudentDetail = () => { document.getElementById('studentDetailOverlay').classList.remove('open'); teacherPendingFiles = []; };
 
-window.closeStudentDetail = () => document.getElementById('studentDetailOverlay').classList.remove('open');
-
-// 先生：ローカル写真を1枚削除
-window.deleteLocalPhoto = (uid, genre, key, idx) => {
-  if (!confirm('この写真を削除しますか？')) return;
-  try {
-    const store = JSON.parse(localStorage.getItem('shuji_photos') || '{}');
-    const k = `${uid}_${genre}_${key}`;
-    if (store[k]) {
-      store[k].splice(idx, 1);
-      if (!store[k].length) delete store[k];
-      localStorage.setItem('shuji_photos', JSON.stringify(store));
-    }
-  } catch(e) {}
-  openStudentDetail(uid);
-};
-
-// 先生：記録を削除（先生モードから）
-let _teacherDelUid=null, _teacherDelKey=null, _teacherDelGenre=null;
+// 先生：記録を削除
+let _tdUid=null, _tdKey=null, _tdGenre=null;
 window.askDelEntryTeacher = (uid, key, date, genre) => {
-  _teacherDelUid=uid; _teacherDelKey=key; _teacherDelGenre=genre;
+  _tdUid=uid; _tdKey=key; _tdGenre=genre;
+  window._teacherDelMode = true;
   document.getElementById('delEntryMsg').textContent = date + ' の記録';
   document.getElementById('delEntryOverlay').classList.add('open');
-  window._teacherDelMode = true;
+};
+
+// 先生：Storage写真を1枚削除
+window.deleteStoragePhoto = async (uid, genre, entryKey, photoIdx) => {
+  if (!confirm('この写真を削除しますか？')) return;
+  try {
+    const result = await storage.ref(`photos/${uid}/${genre}/${entryKey}`).listAll();
+    if (result.items[photoIdx]) await result.items[photoIdx].delete();
+    delete photoUrlCache[`${uid}_${genre}_${entryKey}`];
+    openStudentDetail(uid);
+  } catch(e) { alert('削除に失敗しました: ' + e.message); }
 };
 
 
+// 先生が生徒の記録に写真をアップロードして保存
+window.addTeacherEntry = async () => {
+  if (!sdCurrentUid) return;
+  const genre = document.getElementById('sdTeacherGenre')?.value || '毛筆';
+  const date = document.getElementById('sdTeacherDate')?.value || today();
+  const note = document.getElementById('sdTeacherNote')?.value?.trim() || '';
+  if (!teacherPendingFiles.length && !note) return;
+  const newRef = await db.ref(`students/${sdCurrentUid}/entries/${genre}`).push({ date, note, ts: Date.now() });
+  if (teacherPendingFiles.length) {
+    await uploadPhotosToStorage(sdCurrentUid, genre, newRef.key, teacherPendingFiles);
+  }
+  teacherPendingFiles = [];
+  renderTeacherPreviews();
+  // 記録一覧を更新
+  openStudentDetail(sdCurrentUid);
+};
+
+
+
+// 曜日別メモ
+let currentDayMemo = 'mon';
+let dayMemoCache = {};
+
+window.switchDayMemo = (day) => {
+  currentDayMemo = day;
+  document.querySelectorAll('.day-memo-tab').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.day === day);
+  });
+  const el = document.getElementById('dayMemoInput');
+  if (el) el.value = dayMemoCache[day] || '';
+};
+
+window.saveDayMemo = async () => {
+  const memo = document.getElementById('dayMemoInput').value.trim();
+  dayMemoCache[currentDayMemo] = memo;
+  if (memo) {
+    await db.ref(`day_memos/${currentDayMemo}`).set(memo);
+  } else {
+    await db.ref(`day_memos/${currentDayMemo}`).remove();
+  }
+  const btn = event.target;
+  const orig = btn.textContent;
+  btn.textContent = '✅ 保存済';
+  setTimeout(() => btn.textContent = orig, 1500);
+};
+
+async function loadDayMemos() {
+  const snap = await db.ref('day_memos').once('value');
+  dayMemoCache = snap.val() || {};
+  const el = document.getElementById('dayMemoInput');
+  if (el) el.value = dayMemoCache['mon'] || '';
+}
+
+// 先生メモ
+window.saveTeacherMemo = async () => {
+  if (!sdCurrentUid) return;
+  const memo = document.getElementById('teacherMemoInput').value.trim();
+  if (memo) {
+    await db.ref(`teacher_memos/${sdCurrentUid}`).set(memo);
+  } else {
+    await db.ref(`teacher_memos/${sdCurrentUid}`).remove();
+  }
+  const btn = event.target;
+  const orig = btn.textContent;
+  btn.textContent = '✅ 保存済';
+  setTimeout(() => btn.textContent = orig, 1500);
+};
 
 window.saveLineKeyword = async () => {
   if (!sdCurrentUid) return;
   const keyword = document.getElementById('lineKeywordInput').value.trim();
   if (keyword) {
-    await set(ref(db, `students/${sdCurrentUid}/lineKeyword`), keyword);
+    await db.ref(`students/${sdCurrentUid}/lineKeyword`).set(keyword);
   } else {
-    await remove(ref(db, `students/${sdCurrentUid}/lineKeyword`));
+    await db.ref(`students/${sdCurrentUid}/lineKeyword`).remove();
   }
   const btn = event.target;
   btn.textContent = '✅ 保存済';
@@ -1172,13 +1426,13 @@ function makeCSV(uid, displayName, lines) {
 // ── 生徒自身がエクスポート ──
 window.exportMyPDF = async () => {
   const uid = currentUser.id;
-  const snap = await get(ref(db, `students/${uid}`));
+  const snap = await db.ref(`students/${uid}`).once('value');
   const d = snap.val() || {};
   makePDFWindow(uid, currentUser.display, d);
 };
 window.exportMyCSV = async () => {
   const uid = currentUser.id;
-  const snap = await get(ref(db, `students/${uid}`));
+  const snap = await db.ref(`students/${uid}`).once('value');
   const d = snap.val() || {};
   const lines = buildExportData(uid, currentUser.display, d);
   makeCSV(uid, currentUser.display, lines);
@@ -1187,14 +1441,14 @@ window.exportMyCSV = async () => {
 // ── 先生が生徒のデータをエクスポート ──
 window.exportStudentPDF = async (uid) => {
   if (!uid) { console.warn("exportStudentPDF: uid is empty"); return; }
-  const snap = await get(ref(db, `students/${uid}`));
+  const snap = await db.ref(`students/${uid}`).once('value');
   const d = snap.val() || {};
   const display = d.display || uid;
   makePDFWindow(uid, display, d);
 };
 window.exportStudentCSV = async (uid) => {
   if (!uid) { console.warn("exportStudentCSV: uid is empty"); return; }
-  const snap = await get(ref(db, `students/${uid}`));
+  const snap = await db.ref(`students/${uid}`).once('value');
   const d = snap.val() || {};
   const display = d.display || uid;
   const lines = buildExportData(uid, display, d);
@@ -1227,7 +1481,7 @@ window.openTeacherRankEdit = async (genre) => {
   panel.dataset.genre = genre;
   panel.style.display = 'block';
   document.getElementById('sdRankEditLabel').textContent = genre + ' の段位を選択（確認ポップアップが出ます）';
-  const snap = await get(ref(db, `students/${sdCurrentUid}/ranks/${genre}`));
+  const snap = await db.ref(`students/${sdCurrentUid}/ranks/${genre}`).once('value');
   const cur = (snap.val()||{}).rank;
   document.getElementById('sdRankPills').innerHTML = RANKS.map(r =>
     `<span class="rpill${r===cur?' cur-'+genre:''}" style="margin-bottom:4px" onclick="askTeacherRankChange('${r}')">${r}</span>`
@@ -1235,7 +1489,7 @@ window.openTeacherRankEdit = async (genre) => {
 };
 
 window.askTeacherRankChange = async (rank) => {
-  const snap = await get(ref(db, `students/${sdCurrentUid}/ranks/${sdEditGenre}`));
+  const snap = await db.ref(`students/${sdCurrentUid}/ranks/${sdEditGenre}`).once('value');
   const cur = (snap.val()||{}).rank || '未設定';
   if (rank === cur) return;
   pendingRank = rank;
@@ -1252,10 +1506,10 @@ window.confirmRankChange = async () => {
   const ts = Date.now();
   if (window._teacherRankMode && sdCurrentUid) {
     // 先生が変更
-    await set(ref(db, `students/${sdCurrentUid}/ranks/${sdEditGenre}`), { rank: pendingRank, updatedAt: ts });
-    await push(ref(db, `students/${sdCurrentUid}/rankHistory/${sdEditGenre}`), { rank: pendingRank, ts });
+    await db.ref(`students/${sdCurrentUid}/ranks/${sdEditGenre}`).set({ rank: pendingRank, updatedAt: ts });
+    await db.ref(`students/${sdCurrentUid}/rankHistory/${sdEditGenre}`).push({ rank: pendingRank, ts });
     // 表示を即時更新
-    const snap = await get(ref(db, `students/${sdCurrentUid}/ranks`));
+    const snap = await db.ref(`students/${sdCurrentUid}/ranks`).once('value');
     renderSdRanks(snap.val()||{});
     // 段位ピルも更新
     document.getElementById('sdRankPills').innerHTML = RANKS.map(r =>
@@ -1266,8 +1520,8 @@ window.confirmRankChange = async () => {
     closeConfirm();
   } else {
     // 生徒が変更（従来の処理）
-    await set(ref(db, `students/${currentUser.id}/ranks/${currentGenre}`), { rank: pendingRank, updatedAt: ts });
-    await push(ref(db, `students/${currentUser.id}/rankHistory/${currentGenre}`), { rank: pendingRank, ts });
+    await db.ref(`students/${currentUser.id}/ranks/${currentGenre}`).set({ rank: pendingRank, updatedAt: ts });
+    await db.ref(`students/${currentUser.id}/rankHistory/${currentGenre}`).push({ rank: pendingRank, ts });
     pendingRank = null; closeConfirm();
   }
 };
@@ -1279,26 +1533,20 @@ window.askDelEntry = (key, date) => {
   document.getElementById('delEntryOverlay').classList.add('open');
 };
 window.confirmDelEntry = async () => {
-  if (window._teacherDelMode && _teacherDelUid) {
-    await remove(ref(db, `students/${_teacherDelUid}/entries/${_teacherDelGenre}/${_teacherDelKey}`));
-    try {
-      const store = JSON.parse(localStorage.getItem(LS_PHOTOS) || '{}');
-      delete store[`${_teacherDelUid}_${_teacherDelGenre}_${_teacherDelKey}`];
-      localStorage.setItem(LS_PHOTOS, JSON.stringify(store));
-    } catch(e) {}
+  // 先生モード：_tdUidで先生が選んだ生徒の記録を削除
+  if (window._teacherDelMode && _tdUid) {
+    await db.ref(`students/${_tdUid}/entries/${_tdGenre}/${_tdKey}`).remove();
+    delete photoUrlCache[`${_tdUid}_${_tdGenre}_${_tdKey}`];
     window._teacherDelMode = false;
-    _teacherDelUid = _teacherDelKey = _teacherDelGenre = null;
+    _tdUid = _tdKey = _tdGenre = null;
     closeDelEntry();
     openStudentDetail(sdCurrentUid);
     return;
   }
+  // 生徒モード
   if (!pendingDelEntryKey) return;
-  await remove(ref(db, `students/${currentUser.id}/entries/${currentGenre}/${pendingDelEntryKey}`));
-  try {
-    const store = JSON.parse(localStorage.getItem(LS_PHOTOS) || '{}');
-    delete store[`${currentUser.id}_${currentGenre}_${pendingDelEntryKey}`];
-    localStorage.setItem(LS_PHOTOS, JSON.stringify(store));
-  } catch(e) {}
+  await db.ref(`students/${currentUser.id}/entries/${currentGenre}/${pendingDelEntryKey}`).remove();
+  delete photoUrlCache[`${currentUser.id}_${currentGenre}_${pendingDelEntryKey}`];
   pendingDelEntryKey = null;
   closeDelEntry();
 };
@@ -1312,7 +1560,7 @@ window.askDelStudent = (uid, display) => {
 };
 window.confirmDelStudent = async () => {
   if (!pendingDelStudentUid) return;
-  await remove(ref(db, `students/${pendingDelStudentUid}`));
+  await db.ref(`students/${pendingDelStudentUid}`).remove();
   pendingDelStudentUid = null;
   closeDelStudent();
   closeStudentDetail();
@@ -1333,7 +1581,7 @@ window.openMyHistory = async () => {
 
 window.openStudentHistory = async (uid) => {
   historyUid = uid;
-  const snap = await get(ref(db, `students/${uid}/display`));
+  const snap = await db.ref(`students/${uid}/display`).once('value');
   document.getElementById('historyTitle').textContent = (snap.val()||uid) + ' さんの昇段履歴';
   await loadAndShowHistory(uid, '毛筆');
   document.getElementById('historyOverlay').classList.add('open');
@@ -1345,10 +1593,10 @@ async function loadAndShowHistory(uid, genre) {
     const tab = document.getElementById('hgtab-'+g);
     tab.className = 'hgtab' + (g === genre ? ' active-'+genre : '');
   });
-  const snap = await get(ref(db, `students/${uid}/rankHistory/${genre}`));
+  const snap = await db.ref(`students/${uid}/rankHistory/${genre}`).once('value');
   const raw = snap.val() || {};
   // currentのrankも最初のエントリとして扱う
-  const rankSnap = await get(ref(db, `students/${uid}/ranks/${genre}`));
+  const rankSnap = await db.ref(`students/${uid}/ranks/${genre}`).once('value');
   const curRank = rankSnap.val();
   let items = Object.values(raw).sort((a,b) => a.ts - b.ts);
   // 現在rankがhistoryにない場合は補完しない（push済みのはず）
@@ -1491,7 +1739,7 @@ function sortStudents(entries) {
 // ── LINE検索用キーワードコピー ──
 window.copyLineSearch = async (display, uid) => {
   // 先生が設定したLINE検索キーワードがあればそれを、なければ表示名をコピー
-  const snap = await get(ref(db, `students/${uid}/lineKeyword`));
+  const snap = await db.ref(`students/${uid}/lineKeyword`).once('value');
   const keyword = snap.val() || display;
   try {
     await navigator.clipboard.writeText(keyword);
@@ -1516,9 +1764,9 @@ window.openDayPicker = (uid, display) => {
 window.saveLessonDay = async (day) => {
   if (!dayPickerUid) return;
   if (day) {
-    await set(ref(db, `students/${dayPickerUid}/lessonDay`), day);
+    await db.ref(`students/${dayPickerUid}/lessonDay`).set(day);
   } else {
-    await remove(ref(db, `students/${dayPickerUid}/lessonDay`));
+    await db.ref(`students/${dayPickerUid}/lessonDay`).remove();
   }
   closeDayPicker();
 };
@@ -1527,6 +1775,64 @@ window.closeDayPicker = () => { document.getElementById('dayPickerOverlay').clas
 ['confirmOverlay','detailOverlay','studentDetailOverlay','historyOverlay','delEntryOverlay','delStudentOverlay','dayPickerOverlay'].forEach(id => {
   document.getElementById(id).addEventListener('click', function(e) { if(e.target===this) this.classList.remove('open'); });
 });
+
+// グローバルエイリアス（HTMLのonclickから呼べるようにする）
+function loginStudent(){window.loginStudent&&window.loginStudent()}
+function registerStudent(){window.registerStudent&&window.registerStudent()}
+function loginAsTeacher(){window.loginAsTeacher&&window.loginAsTeacher()}
+function showTeacherForm(){window.showTeacherForm&&window.showTeacherForm()}
+function showStudentForm(){window.showStudentForm&&window.showStudentForm()}
+function switchAuthTab(t){window.switchAuthTab&&window.switchAuthTab(t)}
+function logout(){window.logout&&window.logout()}
+function switchGenre(g){window.switchGenre&&window.switchGenre(g)}
+function toggleRankList(){window.toggleRankList&&window.toggleRankList()}
+function askRankChange(r){window.askRankChange&&window.askRankChange(r)}
+function confirmRankChange(){window.confirmRankChange&&window.confirmRankChange()}
+function closeConfirm(){window.closeConfirm&&window.closeConfirm()}
+function handleTeacherPhotos(e){window.handleTeacherPhotos&&window.handleTeacherPhotos(e)}
+function removeTeacherPhoto(i){window.removeTeacherPhoto&&window.removeTeacherPhoto(i)}
+function addTeacherEntry(){window.addTeacherEntry&&window.addTeacherEntry()}
+function addEntry(){window.addEntry&&window.addEntry()}
+function toggleEntryView(){window.toggleEntryView&&window.toggleEntryView()}
+function exportMyPDF(){window.exportMyPDF&&window.exportMyPDF()}
+function exportMyCSV(){window.exportMyCSV&&window.exportMyCSV()}
+function openDetail(k,d,n,g){window.openDetail&&window.openDetail(k,d,n,g)}
+function handleGridClick(k,d,n,g){window.handleGridClick&&window.handleGridClick(k,d,n,g)}
+function toggleGridSelectMode(){window.toggleGridSelectMode&&window.toggleGridSelectMode()}
+function toggleGridSelectAll(){window.toggleGridSelectAll&&window.toggleGridSelectAll()}
+function saveGridSelected(){window.saveGridSelected&&window.saveGridSelected()}
+function closeDetail(){window.closeDetail&&window.closeDetail()}
+function togglePhotoSel(i){window.togglePhotoSel&&window.togglePhotoSel(i)}
+function toggleSelectAll(){window.toggleSelectAll&&window.toggleSelectAll()}
+function saveOnePhoto(u,i){window.saveOnePhoto&&window.saveOnePhoto(u,i)}
+function saveSelectedPhotos(){window.saveSelectedPhotos&&window.saveSelectedPhotos()}
+function switchTeacherTab(t){window.switchTeacherTab&&window.switchTeacherTab(t)}
+function openStudentDetail(u){window.openStudentDetail&&window.openStudentDetail(u)}
+function closeStudentDetail(){window.closeStudentDetail&&window.closeStudentDetail()}
+function openTeacherRankEdit(g){window.openTeacherRankEdit&&window.openTeacherRankEdit(g)}
+function askTeacherRankChange(r){window.askTeacherRankChange&&window.askTeacherRankChange(r)}
+function saveLineKeyword(){window.saveLineKeyword&&window.saveLineKeyword()}
+function copyLineSearch(d,u){window.copyLineSearch&&window.copyLineSearch(d,u)}
+function openDayPicker(u,d){window.openDayPicker&&window.openDayPicker(u,d)}
+function saveLessonDay(d){window.saveLessonDay&&window.saveLessonDay(d)}
+function closeDayPicker(){window.closeDayPicker&&window.closeDayPicker()}
+function setStudentSort(m){window.setStudentSort&&window.setStudentSort(m)}
+function openMyHistory(){window.openMyHistory&&window.openMyHistory()}
+function openStudentHistory(u){window.openStudentHistory&&window.openStudentHistory(u)}
+function switchHistoryGenre(g){window.switchHistoryGenre&&window.switchHistoryGenre(g)}
+function closeHistory(){window.closeHistory&&window.closeHistory()}
+function askDelEntry(k,d){window.askDelEntry&&window.askDelEntry(k,d)}
+function confirmDelEntry(){window.confirmDelEntry&&window.confirmDelEntry()}
+function closeDelEntry(){window.closeDelEntry&&window.closeDelEntry()}
+function askDelStudent(u,d){window.askDelStudent&&window.askDelStudent(u,d)}
+function confirmDelStudent(){window.confirmDelStudent&&window.confirmDelStudent()}
+function closeDelStudent(){window.closeDelStudent&&window.closeDelStudent()}
+function askDelEntryTeacher(u,k,d,g){window.askDelEntryTeacher&&window.askDelEntryTeacher(u,k,d,g)}
+function deleteStoragePhoto(u,g,k,i){window.deleteStoragePhoto&&window.deleteStoragePhoto(u,g,k,i)}
+function exportStudentPDF(u){window.exportStudentPDF&&window.exportStudentPDF(u)}
+function exportStudentCSV(u){window.exportStudentCSV&&window.exportStudentCSV(u)}
+function openTeacherRankEdit(g){window.openTeacherRankEdit&&window.openTeacherRankEdit(g)}
+
 </script>
 </body>
 </html>
