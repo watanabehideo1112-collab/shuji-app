@@ -887,20 +887,35 @@ window.toggleGridSelectAll = () => {
   if (saveBtn) saveBtn.textContent = gridSelectedPhotos.length > 0 ? `📥 保存(${gridSelectedPhotos.length}枚)` : '📥 保存';
 };
 
+
+async function downloadImage(url, filename) {
+  const res = await fetch(url);
+  const blob = await res.blob();
+  const blobUrl = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = blobUrl;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(blobUrl);
+}
+
 window.saveGridSelected = async () => {
-  if (!gridSelectedPhotos.length) { alert('写真を選択してください'); return; }
-  const saveBtn = document.getElementById('gridSaveBtn');
-  if (saveBtn) { saveBtn.textContent = '保存中...'; saveBtn.disabled = true; }
-  for (let i = 0; i < gridSelectedPhotos.length; i++) {
-    const a = document.createElement('a');
-    a.href = gridSelectedPhotos[i].url;
-    a.download = `shuji_${gridSelectedPhotos[i].date}_${i+1}.jpg`;
-    a.target = '_blank';
-    a.click();
-    await new Promise(r => setTimeout(r, 400));
+  if (!gridSelectedPhotos.length) {
+    alert('写真を選択してください');
+    return;
   }
-  if (saveBtn) { saveBtn.textContent = `📥 保存(${gridSelectedPhotos.length}枚)`; saveBtn.disabled = false; }
+
+  alert('画像を長押しして「写真に保存」してください');
+
+  for (let i = 0; i < gridSelectedPhotos.length; i++) {
+    const p = gridSelectedPhotos[i];
+    await downloadImage(p.url, `shuji_${p.date}_${i+1}.jpg`);
+    await new Promise(r => setTimeout(r, 500));
+  }
 };
+
 
 window.handleGridClick = (key, date, noteEnc, genre) => {
   if (gridSelectMode) {
