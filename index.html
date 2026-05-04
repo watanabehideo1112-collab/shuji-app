@@ -195,6 +195,10 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--paper);color:var(--t
 .detail-row{display:flex;gap:10px;font-size:13px;margin-bottom:6px}
 .detail-label{color:var(--text-sub);min-width:60px;flex-shrink:0}
 .detail-val{color:var(--text);flex:1;line-height:1.6}
+.grid-cell img {
+  -webkit-touch-callout: default;
+  -webkit-user-select: auto;
+}
 </style>
 </head>
 <body>
@@ -278,11 +282,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--paper);color:var(--t
       <div class="card">
         <div class="card-head">
           <span class="card-head-label">記録ログ</span>
-          <div style="display:flex;gap:6px;align-items:center">
-            <button class="small-btn" id="gridSelectAllBtn" onclick="toggleGridSelectAll()" style="display:none">全選択</button>
-            <button class="small-btn" id="gridSaveBtn" onclick="saveGridSelected()" style="display:none;background:linear-gradient(135deg,var(--purple),var(--purple2));color:#fff;border:none;font-weight:700">📥 保存</button>
-            <button class="small-btn" id="gridSelectModeBtn" onclick="toggleGridSelectMode()">選択</button>
-          </div>
+          <button class="small-btn" id="downloadAllBtn" onclick="downloadAllPhotosZip()" style="background:linear-gradient(135deg,var(--purple),var(--purple2));color:#fff;border:none;font-weight:500">📦 まとめて保存</button>
         </div>
         <div id="entryList"><div class="loading">読み込み中...</div></div>
         <div class="export-bar">
@@ -505,12 +505,181 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--paper);color:var(--t
   </div>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-storage-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js">
+function openImageViewer(urls, date) {
+  const overlay = document.createElement('div');
+  overlay.style.cssText = `
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,0.9);
+    z-index:9999;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+  `;
+
+  overlay.innerHTML = `
+    <div style="color:white;font-size:14px;margin-bottom:10px;">
+      ${date}（長押しで保存）
+    </div>
+    <img src="${urls[0]}" style="max-width:90%;max-height:75%;border-radius:8px;">
+    <button style="margin-top:15px;padding:10px 20px;border:none;border-radius:8px;background:white;font-size:14px;">
+      閉じる
+    </button>
+  `;
+
+  overlay.onclick = () => overlay.remove();
+  document.body.appendChild(overlay);
+}
+
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js">
+function openImageViewer(urls, date) {
+  const overlay = document.createElement('div');
+  overlay.style.cssText = `
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,0.9);
+    z-index:9999;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+  `;
+
+  overlay.innerHTML = `
+    <div style="color:white;font-size:14px;margin-bottom:10px;">
+      ${date}（長押しで保存）
+    </div>
+    <img src="${urls[0]}" style="max-width:90%;max-height:75%;border-radius:8px;">
+    <button style="margin-top:15px;padding:10px 20px;border:none;border-radius:8px;background:white;font-size:14px;">
+      閉じる
+    </button>
+  `;
+
+  overlay.onclick = () => overlay.remove();
+  document.body.appendChild(overlay);
+}
+
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js">
+function openImageViewer(urls, date) {
+  const overlay = document.createElement('div');
+  overlay.style.cssText = `
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,0.9);
+    z-index:9999;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+  `;
+
+  overlay.innerHTML = `
+    <div style="color:white;font-size:14px;margin-bottom:10px;">
+      ${date}（長押しで保存）
+    </div>
+    <img src="${urls[0]}" style="max-width:90%;max-height:75%;border-radius:8px;">
+    <button style="margin-top:15px;padding:10px 20px;border:none;border-radius:8px;background:white;font-size:14px;">
+      閉じる
+    </button>
+  `;
+
+  overlay.onclick = () => overlay.remove();
+  document.body.appendChild(overlay);
+}
+
+</script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js">
+function openImageViewer(urls, date) {
+  const overlay = document.createElement('div');
+  overlay.style.cssText = `
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,0.9);
+    z-index:9999;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+  `;
+
+  overlay.innerHTML = `
+    <div style="color:white;font-size:14px;margin-bottom:10px;">
+      ${date}（長押しで保存）
+    </div>
+    <img src="${urls[0]}" style="max-width:90%;max-height:75%;border-radius:8px;">
+    <button style="margin-top:15px;padding:10px 20px;border:none;border-radius:8px;background:white;font-size:14px;">
+      閉じる
+    </button>
+  `;
+
+  overlay.onclick = () => overlay.remove();
+  document.body.appendChild(overlay);
+}
+
+</script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js">
+function openImageViewer(urls, date) {
+  const overlay = document.createElement('div');
+  overlay.style.cssText = `
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,0.9);
+    z-index:9999;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+  `;
+
+  overlay.innerHTML = `
+    <div style="color:white;font-size:14px;margin-bottom:10px;">
+      ${date}（長押しで保存）
+    </div>
+    <img src="${urls[0]}" style="max-width:90%;max-height:75%;border-radius:8px;">
+    <button style="margin-top:15px;padding:10px 20px;border:none;border-radius:8px;background:white;font-size:14px;">
+      閉じる
+    </button>
+  `;
+
+  overlay.onclick = () => overlay.remove();
+  document.body.appendChild(overlay);
+}
+
+</script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-storage-compat.js">
+function openImageViewer(urls, date) {
+  const overlay = document.createElement('div');
+  overlay.style.cssText = `
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,0.9);
+    z-index:9999;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+  `;
+
+  overlay.innerHTML = `
+    <div style="color:white;font-size:14px;margin-bottom:10px;">
+      ${date}（長押しで保存）
+    </div>
+    <img src="${urls[0]}" style="max-width:90%;max-height:75%;border-radius:8px;">
+    <button style="margin-top:15px;padding:10px 20px;border:none;border-radius:8px;background:white;font-size:14px;">
+      閉じる
+    </button>
+  `;
+
+  overlay.onclick = () => overlay.remove();
+  document.body.appendChild(overlay);
+}
+
+</script>
 <script>
 
 const firebaseConfig = {
@@ -887,37 +1056,22 @@ window.toggleGridSelectAll = () => {
   if (saveBtn) saveBtn.textContent = gridSelectedPhotos.length > 0 ? `📥 保存(${gridSelectedPhotos.length}枚)` : '📥 保存';
 };
 
-
-async function downloadImage(url, filename) {
-  const res = await fetch(url);
-  const blob = await res.blob();
-  const blobUrl = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = blobUrl;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  URL.revokeObjectURL(blobUrl);
-}
-
 window.saveGridSelected = async () => {
-  if (!gridSelectedPhotos.length) {
-    alert('写真を選択してください');
-    return;
-  }
-
-  alert('画像を長押しして「写真に保存」してください');
-
+  if (!gridSelectedPhotos.length) { alert('写真を選択してください'); return; }
+  const saveBtn = document.getElementById('gridSaveBtn');
+  if (saveBtn) { saveBtn.textContent = '保存中...'; saveBtn.disabled = true; }
   for (let i = 0; i < gridSelectedPhotos.length; i++) {
-    const p = gridSelectedPhotos[i];
-    await downloadImage(p.url, `shuji_${p.date}_${i+1}.jpg`);
-    await new Promise(r => setTimeout(r, 500));
+    const a = document.createElement('a');
+    a.href = gridSelectedPhotos[i].url;
+    a.download = `shuji_${gridSelectedPhotos[i].date}_${i+1}.jpg`;
+    a.target = '_blank';
+    a.click();
+    await new Promise(r => setTimeout(r, 400));
   }
+  if (saveBtn) { saveBtn.textContent = `📥 保存(${gridSelectedPhotos.length}枚)`; saveBtn.disabled = false; }
 };
 
-
-window.handleGridClick = (key, date, noteEnc, genre) => {
+window.handleGridClick = async (key, date, noteEnc, genre) => {
   if (gridSelectMode) {
     const cell = document.getElementById('gc-'+key);
     const urls = cell && cell.dataset.urls ? JSON.parse(cell.dataset.urls) : [];
@@ -927,7 +1081,6 @@ window.handleGridClick = (key, date, noteEnc, genre) => {
       if (idx >= 0) gridSelectedPhotos.splice(idx, 1);
       else gridSelectedPhotos.push({ url, date });
     });
-    // 選択状態の視覚更新
     const allUrls = urls.map(u => u);
     const isSel = allUrls.some(u => gridSelectedPhotos.find(p => p.url === u));
     if (cell) {
@@ -935,7 +1088,6 @@ window.handleGridClick = (key, date, noteEnc, genre) => {
       cell.style.borderRadius = isSel ? '9px' : '';
       cell.style.overflow = 'hidden';
     }
-    // セル内にチェックマーク
     let chk = document.getElementById('gc-chk-'+key);
     if (!chk) {
       chk = document.createElement('div');
@@ -950,7 +1102,10 @@ window.handleGridClick = (key, date, noteEnc, genre) => {
     const saveBtn = document.getElementById('gridSaveBtn');
     if (saveBtn) saveBtn.textContent = gridSelectedPhotos.length > 0 ? `📥 保存(${gridSelectedPhotos.length}枚)` : '📥 保存';
   } else {
-    openDetail(key, date, noteEnc, genre);
+    const cell = document.getElementById('gc-'+key);
+    if (!cell || !cell.dataset.urls) return;
+    const urls = JSON.parse(cell.dataset.urls);
+    openImageViewer(urls, date);
   }
 };
 
@@ -1791,6 +1946,65 @@ window.closeDayPicker = () => { document.getElementById('dayPickerOverlay').clas
   document.getElementById(id).addEventListener('click', function(e) { if(e.target===this) this.classList.remove('open'); });
 });
 
+
+// ── 全写真をZIPでまとめてダウンロード ──
+window.downloadAllPhotosZip = async () => {
+  const btn = document.getElementById('downloadAllBtn');
+  const uid = currentUser.id;
+  if (!cachedEntries) { alert('記録がありません'); return; }
+  btn.textContent = '準備中...';
+  btn.disabled = true;
+
+  function fetchBlob(url) {
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open('GET', url, true);
+      xhr.responseType = 'blob';
+      xhr.onload = () => xhr.status === 200 ? resolve(xhr.response) : reject(new Error('HTTP ' + xhr.status));
+      xhr.onerror = () => reject(new Error('ネットワークエラー'));
+      xhr.send();
+    });
+  }
+
+  try {
+    const zip = new JSZip();
+    const items = Object.entries(cachedEntries);
+    let photoCount = 0;
+    for (const [key, e] of items) {
+      const genre = e.genre || currentGenre;
+      const urls = await getPhotoUrls(uid, genre, key);
+      for (let i = 0; i < urls.length; i++) {
+        btn.textContent = `取得中 ${photoCount+1}枚目...`;
+        try {
+          const blob = await fetchBlob(urls[i]);
+          const ext = blob.type.includes('png') ? 'png' : 'jpg';
+          zip.file(`${e.date}_${genre}_${i+1}.${ext}`, blob);
+          photoCount++;
+        } catch(err) { console.warn('スキップ:', err); }
+      }
+    }
+    if (photoCount === 0) {
+      alert('保存できる写真がありません');
+      btn.textContent = '📦 まとめて保存';
+      btn.disabled = false;
+      return;
+    }
+    btn.textContent = 'ZIP作成中...';
+    const zipBlob = await zip.generateAsync({ type: 'blob' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(zipBlob);
+    a.download = `書道手帳_写真_${new Date().toLocaleDateString('ja-JP').replace(/\//g, '-')}.zip`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+    btn.textContent = `✅ ${photoCount}枚完了`;
+    setTimeout(() => { btn.textContent = '📦 まとめて保存'; btn.disabled = false; }, 3000);
+  } catch(err) {
+    alert('エラー: ' + err.message);
+    btn.textContent = '📦 まとめて保存';
+    btn.disabled = false;
+  }
+};
+
 // グローバルエイリアス（HTMLのonclickから呼べるようにする）
 function loginStudent(){window.loginStudent&&window.loginStudent()}
 function registerStudent(){window.registerStudent&&window.registerStudent()}
@@ -1814,6 +2028,7 @@ function exportMyCSV(){window.exportMyCSV&&window.exportMyCSV()}
 function openDetail(k,d,n,g){window.openDetail&&window.openDetail(k,d,n,g)}
 function handleGridClick(k,d,n,g){window.handleGridClick&&window.handleGridClick(k,d,n,g)}
 function toggleGridSelectMode(){window.toggleGridSelectMode&&window.toggleGridSelectMode()}
+function downloadAllPhotosZip(){window.downloadAllPhotosZip&&window.downloadAllPhotosZip()}
 function toggleGridSelectAll(){window.toggleGridSelectAll&&window.toggleGridSelectAll()}
 function saveGridSelected(){window.saveGridSelected&&window.saveGridSelected()}
 function closeDetail(){window.closeDetail&&window.closeDetail()}
@@ -1847,6 +2062,34 @@ function deleteStoragePhoto(u,g,k,i){window.deleteStoragePhoto&&window.deleteSto
 function exportStudentPDF(u){window.exportStudentPDF&&window.exportStudentPDF(u)}
 function exportStudentCSV(u){window.exportStudentCSV&&window.exportStudentCSV(u)}
 function openTeacherRankEdit(g){window.openTeacherRankEdit&&window.openTeacherRankEdit(g)}
+
+
+function openImageViewer(urls, date) {
+  const overlay = document.createElement('div');
+  overlay.style.cssText = `
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,0.9);
+    z-index:9999;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+  `;
+
+  overlay.innerHTML = `
+    <div style="color:white;font-size:14px;margin-bottom:10px;">
+      ${date}（長押しで保存）
+    </div>
+    <img src="${urls[0]}" style="max-width:90%;max-height:75%;border-radius:8px;">
+    <button style="margin-top:15px;padding:10px 20px;border:none;border-radius:8px;background:white;font-size:14px;">
+      閉じる
+    </button>
+  `;
+
+  overlay.onclick = () => overlay.remove();
+  document.body.appendChild(overlay);
+}
 
 </script>
 </body>
