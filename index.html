@@ -295,7 +295,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--paper);color:var(--t
     <div id="teacherView" style="display:none">
       <div class="view-tabs">
         <div class="view-tab active" onclick="switchTeacherTab('students')">生徒一覧</div>
-        <div class="view-tab" onclick="switchTeacherTab('feed')">最新記録</div>
+        <div class="view-tab" onclick="switchTeacherTab('daymemo')">曜日別メモ</div>
       </div>
       <div id="teacherStudents">
         <div class="card">
@@ -318,8 +318,21 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--paper);color:var(--t
       </div>
       <div id="teacherFeed" style="display:none">
         <div class="card">
-          <div class="card-head"><span class="card-head-label">最新の記録（全生徒）</span></div>
-          <div id="feedList"><div class="loading">読み込み中...</div></div>
+          <div class="card-head"><span class="card-head-label">曜日別メモ</span></div>
+          <div style="padding:14px 16px">
+            <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">
+              <button class="day-memo-tab active" data-day="mon" onclick="switchDayMemo('mon')">月曜日</button>
+              <button class="day-memo-tab" data-day="tue" onclick="switchDayMemo('tue')">火曜日</button>
+              <button class="day-memo-tab" data-day="wed" onclick="switchDayMemo('wed')">水曜日</button>
+              <button class="day-memo-tab" data-day="thu" onclick="switchDayMemo('thu')">木曜日</button>
+              <button class="day-memo-tab" data-day="fri" onclick="switchDayMemo('fri')">金曜日</button>
+              <button class="day-memo-tab" data-day="sat" onclick="switchDayMemo('sat')">土曜日</button>
+              <button class="day-memo-tab" data-day="sun" onclick="switchDayMemo('sun')">日曜日</button>
+            </div>
+            <textarea id="dayMemoTabInput" placeholder="例: 月曜クラスは筆圧が課題、来週は楷書から..." style="width:100%;font-size:13px;border:0.5px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;background:var(--paper);resize:vertical;min-height:120px;font-family:var(--font-sans)"></textarea>
+            <button class="save-btn" style="width:100%;margin-top:8px" onclick="saveDayMemoTab()">保存する</button>
+            <div id="dayMemoSaved" style="font-size:12px;color:#06a847;text-align:center;margin-top:6px;min-height:18px"></div>
+          </div>
         </div>
       </div>
     </div>
@@ -1297,9 +1310,15 @@ function renderFeed(data) {
 }
 
 window.switchTeacherTab = (tab) => {
-  document.querySelectorAll('.view-tab').forEach((t,i) => t.classList.toggle('active', ['students','feed'][i]===tab));
+  document.querySelectorAll('.view-tab').forEach((t,i) => t.classList.toggle('active', ['students','daymemo'][i]===tab));
   document.getElementById('teacherStudents').style.display = tab==='students' ? 'block' : 'none';
-  document.getElementById('teacherFeed').style.display = tab==='feed' ? 'block' : 'none';
+  document.getElementById('teacherFeed').style.display = tab==='daymemo' ? 'block' : 'none';
+  if (tab==='daymemo') {
+    loadDayMemos().then(() => {
+      const el = document.getElementById('dayMemoTabInput');
+      if (el) el.value = dayMemoCache[currentDayMemo] || '';
+    });
+  }
 };
 
 window.openStudentDetail = async (uid) => {
@@ -1415,6 +1434,27 @@ window.switchDayMemo = (day) => {
   });
   const el = document.getElementById('dayMemoInput');
   if (el) el.value = dayMemoCache[day] || '';
+  const el2 = document.getElementById('dayMemoTabInput');
+  if (el2) el2.value = dayMemoCache[day] || '';
+};
+
+
+window.saveDayMemoTab = async () => {
+  const memo = document.getElementById('dayMemoTabInput').value.trim();
+  dayMemoCache[currentDayMemo] = memo;
+  if (memo) {
+    await db.ref(`day_memos/${currentDayMemo}`).set(memo);
+  } else {
+    await db.ref(`day_memos/${currentDayMemo}`).remove();
+  }
+  const saved = document.getElementById('dayMemoSaved');
+  if (saved) {
+    saved.textContent = '✅ 保存しました';
+    setTimeout(() => { saved.textContent = ''; }, 2000);
+  }
+  // 生徒詳細内のメモも同期
+  const el = document.getElementById('dayMemoInput');
+  if (el) el.value = memo;
 };
 
 window.saveDayMemo = async () => {
@@ -1952,51 +1992,35 @@ window.downloadAllPhotosZip = async () => {
   const btn = document.getElementById('downloadAllBtn');
   const uid = currentUser.id;
   if (!cachedEntries) { alert('記録がありません'); return; }
-  btn.textContent = '準備中...';
+  btn.textContent = '収集中...';
   btn.disabled = true;
-
-  function fetchBlob(url) {
-    return new Promise((resolve, reject) => {
-      const xhr = new XMLHttpRequest();
-      xhr.open('GET', url, true);
-      xhr.responseType = 'blob';
-      xhr.onload = () => xhr.status === 200 ? resolve(xhr.response) : reject(new Error('HTTP ' + xhr.status));
-      xhr.onerror = () => reject(new Error('ネットワークエラー'));
-      xhr.send();
-    });
-  }
-
   try {
-    const zip = new JSZip();
     const items = Object.entries(cachedEntries);
-    let photoCount = 0;
+    let allUrls = [];
     for (const [key, e] of items) {
       const genre = e.genre || currentGenre;
       const urls = await getPhotoUrls(uid, genre, key);
-      for (let i = 0; i < urls.length; i++) {
-        btn.textContent = `取得中 ${photoCount+1}枚目...`;
-        try {
-          const blob = await fetchBlob(urls[i]);
-          const ext = blob.type.includes('png') ? 'png' : 'jpg';
-          zip.file(`${e.date}_${genre}_${i+1}.${ext}`, blob);
-          photoCount++;
-        } catch(err) { console.warn('スキップ:', err); }
-      }
+      urls.forEach((url, i) => allUrls.push({ url, date: e.date, genre, idx: i }));
     }
-    if (photoCount === 0) {
+    if (allUrls.length === 0) {
       alert('保存できる写真がありません');
       btn.textContent = '📦 まとめて保存';
       btn.disabled = false;
       return;
     }
-    btn.textContent = 'ZIP作成中...';
-    const zipBlob = await zip.generateAsync({ type: 'blob' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(zipBlob);
-    a.download = `書道手帳_写真_${new Date().toLocaleDateString('ja-JP').replace(/\//g, '-')}.zip`;
-    a.click();
-    URL.revokeObjectURL(a.href);
-    btn.textContent = `✅ ${photoCount}枚完了`;
+    // iOSでも動く方式：新しいタブで順番に開く
+    // ユーザーに案内してから開始
+    const ok = confirm(`${allUrls.length}枚の写真を順番に新しいタブで開きます。
+各写真を長押し→「写真に保存」で保存してください。
+
+続けますか？`);
+    if (!ok) { btn.textContent = '📦 まとめて保存'; btn.disabled = false; return; }
+    for (let i = 0; i < allUrls.length; i++) {
+      btn.textContent = `${i+1}/${allUrls.length}枚目...`;
+      window.open(allUrls[i].url, '_blank');
+      await new Promise(r => setTimeout(r, 1200));
+    }
+    btn.textContent = `✅ ${allUrls.length}枚完了`;
     setTimeout(() => { btn.textContent = '📦 まとめて保存'; btn.disabled = false; }, 3000);
   } catch(err) {
     alert('エラー: ' + err.message);
@@ -2029,6 +2053,7 @@ function openDetail(k,d,n,g){window.openDetail&&window.openDetail(k,d,n,g)}
 function handleGridClick(k,d,n,g){window.handleGridClick&&window.handleGridClick(k,d,n,g)}
 function toggleGridSelectMode(){window.toggleGridSelectMode&&window.toggleGridSelectMode()}
 function downloadAllPhotosZip(){window.downloadAllPhotosZip&&window.downloadAllPhotosZip()}
+function saveDayMemoTab(){window.saveDayMemoTab&&window.saveDayMemoTab()}
 function toggleGridSelectAll(){window.toggleGridSelectAll&&window.toggleGridSelectAll()}
 function saveGridSelected(){window.saveGridSelected&&window.saveGridSelected()}
 function closeDetail(){window.closeDetail&&window.closeDetail()}
