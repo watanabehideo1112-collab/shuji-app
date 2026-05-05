@@ -404,35 +404,6 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--paper);color:var(--t
         <button class="graph-btn" style="background:rgba(6,199,85,.12);color:#06a847;border-color:rgba(6,199,85,.3);flex-shrink:0" onclick="saveLineKeyword()">保存</button>
       </div>
     </div>
-    <!-- 先生メモ欄 -->
-    <div style="margin-bottom:1rem;padding:10px 12px;background:rgba(102,126,234,.05);border:0.5px solid rgba(102,126,234,.2);border-radius:var(--radius-sm)">
-      <div style="font-size:10px;font-weight:700;color:var(--purple2);letter-spacing:.06em;margin-bottom:8px">先生メモ</div>
-      <!-- 個人メモ -->
-      <div style="margin-bottom:8px">
-        <div style="font-size:11px;color:var(--text-sub);margin-bottom:4px">個人メモ（次回への引き継ぎなど）</div>
-        <div style="display:flex;gap:6px;align-items:flex-start">
-          <textarea id="teacherMemoInput" placeholder="例: 右払いに注意、次回は楷書から..." style="flex:1;font-size:13px;border:0.5px solid rgba(102,126,234,.2);border-radius:var(--radius-sm);padding:7px 10px;background:#fff;resize:none;height:52px;font-family:var(--font-sans)"></textarea>
-          <button class="graph-btn" style="background:rgba(102,126,234,.12);color:var(--purple2);border-color:rgba(102,126,234,.3);flex-shrink:0;margin-top:2px" onclick="saveTeacherMemo()">保存</button>
-        </div>
-      </div>
-      <!-- 曜日別メモ -->
-      <div>
-        <div style="font-size:11px;color:var(--text-sub);margin-bottom:6px">曜日別メモ</div>
-        <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:6px">
-          <button class="day-memo-tab active" data-day="mon" onclick="switchDayMemo('mon')">月</button>
-          <button class="day-memo-tab" data-day="tue" onclick="switchDayMemo('tue')">火</button>
-          <button class="day-memo-tab" data-day="wed" onclick="switchDayMemo('wed')">水</button>
-          <button class="day-memo-tab" data-day="thu" onclick="switchDayMemo('thu')">木</button>
-          <button class="day-memo-tab" data-day="fri" onclick="switchDayMemo('fri')">金</button>
-          <button class="day-memo-tab" data-day="sat" onclick="switchDayMemo('sat')">土</button>
-          <button class="day-memo-tab" data-day="sun" onclick="switchDayMemo('sun')">日</button>
-        </div>
-        <div style="display:flex;gap:6px;align-items:flex-start">
-          <textarea id="dayMemoInput" placeholder="例: 月曜クラスは筆圧が課題..." style="flex:1;font-size:13px;border:0.5px solid rgba(102,126,234,.2);border-radius:var(--radius-sm);padding:7px 10px;background:#fff;resize:none;height:52px;font-family:var(--font-sans)"></textarea>
-          <button class="graph-btn" style="background:rgba(102,126,234,.12);color:var(--purple2);border-color:rgba(102,126,234,.3);flex-shrink:0;margin-top:2px" onclick="saveDayMemo()">保存</button>
-        </div>
-      </div>
-    </div>
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px"><div class="card-head-label">記録ログ</div><button class="graph-btn" id="sdHistoryBtn" onclick="openStudentHistory(this.getAttribute('data-uid'))">📈 昇段グラフ</button></div>
     <!-- 先生が写真付き記録を追加 -->
     <div style="margin-bottom:1rem;padding:10px 12px;background:rgba(102,126,234,.05);border:0.5px solid rgba(102,126,234,.2);border-radius:var(--radius-sm)">
@@ -1073,15 +1044,17 @@ window.saveGridSelected = async () => {
   if (!gridSelectedPhotos.length) { alert('写真を選択してください'); return; }
   const saveBtn = document.getElementById('gridSaveBtn');
   if (saveBtn) { saveBtn.textContent = '保存中...'; saveBtn.disabled = true; }
-  for (let i = 0; i < gridSelectedPhotos.length; i++) {
-    const a = document.createElement('a');
-    a.href = gridSelectedPhotos[i].url;
-    a.download = `shuji_${gridSelectedPhotos[i].date}_${i+1}.jpg`;
-    a.target = '_blank';
-    a.click();
-    await new Promise(r => setTimeout(r, 400));
+  try {
+    const photos = gridSelectedPhotos.map((p, i) => ({ ...p, idx: i }));
+    await downloadPhotosAsZip(photos, saveBtn, `shuji_selected_${today()}`);
+    if (saveBtn) saveBtn.textContent = `✅ ${gridSelectedPhotos.length}枚をZIP保存`;
+    setTimeout(() => {
+      if (saveBtn) { saveBtn.textContent = `📥 保存(${gridSelectedPhotos.length}枚)`; saveBtn.disabled = false; }
+    }, 3000);
+  } catch(err) {
+    alert('エラー: ' + err.message);
+    if (saveBtn) { saveBtn.textContent = `📥 保存(${gridSelectedPhotos.length}枚)`; saveBtn.disabled = false; }
   }
-  if (saveBtn) { saveBtn.textContent = `📥 保存(${gridSelectedPhotos.length}枚)`; saveBtn.disabled = false; }
 };
 
 window.handleGridClick = async (key, date, noteEnc, genre) => {
@@ -1225,13 +1198,11 @@ window.saveOnePhoto = (url, idx) => {
 window.saveSelectedPhotos = async () => {
   const sel = [...detailSelectedIndexes].sort();
   if (!sel.length) { alert('写真を選択してください'); return; }
-  for (let i = 0; i < sel.length; i++) {
-    const a = document.createElement('a');
-    a.href = detailCurrentPhotos[sel[i]];
-    a.download = `shuji_${sel[i]+1}.jpg`;
-    a.target = '_blank';
-    a.click();
-    await new Promise(r => setTimeout(r, 400));
+  try {
+    const photos = sel.map((idx, i) => ({ url: detailCurrentPhotos[idx], date: document.getElementById('dTitle').textContent, idx: i }));
+    await downloadPhotosAsZip(photos, null, `shuji_selected_${today()}`);
+  } catch(err) {
+    alert('エラー: ' + err.message);
   }
 };
 
@@ -1346,35 +1317,26 @@ window.openStudentDetail = async (uid) => {
     sdEntriesEl.innerHTML = '<div style="color:var(--text-sub);font-size:13px;padding:.5rem 0">記録がありません</div>';
   } else {
     sdEntriesEl.innerHTML = all.map((e,i) => `
-      <div style="padding:10px 16px;border-bottom:0.5px solid var(--border)">
-        <div style="display:flex;align-items:center;gap:10px">
-          <div id="sd-thumb-${i}" style="width:48px;height:48px;flex-shrink:0;border-radius:8px;background:var(--paper);display:flex;align-items:center;justify-content:center;font-size:22px;overflow:hidden;border:0.5px solid var(--border)">
-            ${e.genre==='毛筆'?'🖌':'✏️'}
-          </div>
+      <div style="padding:12px 16px;border-bottom:0.5px solid var(--border)">
+        <div style="display:flex;align-items:flex-start;gap:10px">
           <div style="flex:1;min-width:0">
-            <div style="font-size:12px;color:var(--text-sub);margin-bottom:2px">${e.date} · ${e.genre}</div>
-            <div style="font-size:13px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${e.note||'(メモなし)'}</div>
+            <div style="font-size:12px;color:var(--text-sub);margin-bottom:3px">${e.date} · ${e.genre}</div>
+            <div style="font-size:13px;color:var(--text);line-height:1.5">${e.note||'(メモなし)'}</div>
+            <div id="sd-photos-${i}" style="display:none;flex-wrap:wrap;gap:6px;margin-top:8px"></div>
           </div>
           <button onclick="askDelEntryTeacher('${uid}','${e.key}','${e.date}','${e.genre}')" style="flex-shrink:0;background:rgba(220,38,38,.08);color:#dc2626;border:0.5px solid rgba(220,38,38,.2);border-radius:99px;padding:3px 9px;font-size:11px;cursor:pointer;font-family:var(--font-sans)">削除</button>
         </div>
-        <div id="sd-photos-${i}" style="display:flex;flex-wrap:wrap;gap:5px;margin-top:8px;padding-left:58px"></div>
       </div>`
     ).join('');
-    // 写真を非同期でサムネ差し込み＋削除ボタン付き
+    // 写真を非同期でシンプルに差し込み
     all.forEach(async (e, i) => {
       const urls = await getPhotoUrls(uid, e.genre, e.key);
       if (!urls.length) return;
-      // サムネ更新
-      const thumbEl = document.getElementById('sd-thumb-'+i);
-      if (thumbEl) thumbEl.innerHTML = `<img src="${urls[0]}" style="width:44px;height:44px;object-fit:cover;border-radius:8px">`;
-      // 写真一覧表示＋削除ボタン
       const photosEl = document.getElementById('sd-photos-'+i);
       if (photosEl) {
+        photosEl.style.display = 'flex';
         photosEl.innerHTML = urls.map((url, pi) =>
-          `<div style="position:relative">
-            <img src="${url}" style="width:72px;height:72px;object-fit:cover;border-radius:8px;border:0.5px solid var(--border)">
-            <button onclick="deleteStoragePhoto('${uid}','${e.genre}','${e.key}',${pi})" style="position:absolute;top:-5px;right:-5px;width:18px;height:18px;border-radius:50%;background:rgba(220,38,38,.88);color:#fff;border:none;font-size:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1">×</button>
-          </div>`
+          `<img src="${url}" style="width:72px;height:72px;object-fit:cover;border-radius:8px;border:0.5px solid var(--border)">`
         ).join('');
       }
     });
@@ -1391,18 +1353,6 @@ window.askDelEntryTeacher = (uid, key, date, genre) => {
   document.getElementById('delEntryMsg').textContent = date + ' の記録';
   document.getElementById('delEntryOverlay').classList.add('open');
 };
-
-// 先生：Storage写真を1枚削除
-window.deleteStoragePhoto = async (uid, genre, entryKey, photoIdx) => {
-  if (!confirm('この写真を削除しますか？')) return;
-  try {
-    const result = await storage.ref(`photos/${uid}/${genre}/${entryKey}`).listAll();
-    if (result.items[photoIdx]) await result.items[photoIdx].delete();
-    delete photoUrlCache[`${uid}_${genre}_${entryKey}`];
-    openStudentDetail(uid);
-  } catch(e) { alert('削除に失敗しました: ' + e.message); }
-};
-
 
 // 先生が生徒の記録に写真をアップロードして保存
 window.addTeacherEntry = async () => {
@@ -1477,21 +1427,6 @@ async function loadDayMemos() {
   const el = document.getElementById('dayMemoInput');
   if (el) el.value = dayMemoCache['mon'] || '';
 }
-
-// 先生メモ
-window.saveTeacherMemo = async () => {
-  if (!sdCurrentUid) return;
-  const memo = document.getElementById('teacherMemoInput').value.trim();
-  if (memo) {
-    await db.ref(`teacher_memos/${sdCurrentUid}`).set(memo);
-  } else {
-    await db.ref(`teacher_memos/${sdCurrentUid}`).remove();
-  }
-  const btn = event.target;
-  const orig = btn.textContent;
-  btn.textContent = '✅ 保存済';
-  setTimeout(() => btn.textContent = orig, 1500);
-};
 
 window.saveLineKeyword = async () => {
   if (!sdCurrentUid) return;
@@ -1988,6 +1923,55 @@ window.closeDayPicker = () => { document.getElementById('dayPickerOverlay').clas
 
 
 // ── 全写真をZIPでまとめてダウンロード ──
+function sanitizeZipName(value) {
+  return String(value || '')
+    .replace(/[\\/:*?"<>|#%&{}$!'@+=`]/g, '_')
+    .replace(/\s+/g, '_')
+    .slice(0, 80) || 'photo';
+}
+
+function photoExtension(contentType, url) {
+  if (contentType && contentType.includes('png')) return 'png';
+  if (contentType && contentType.includes('webp')) return 'webp';
+  if (contentType && contentType.includes('gif')) return 'gif';
+  const match = decodeURIComponent(url.split('?')[0]).match(/\.([a-zA-Z0-9]{2,5})$/);
+  return match ? match[1].toLowerCase() : 'jpg';
+}
+
+async function downloadPhotosAsZip(photos, button, zipBaseName) {
+  if (!window.JSZip) throw new Error('ZIP作成ライブラリの読み込みに失敗しました。通信環境を確認して、もう一度お試しください。');
+  const zip = new JSZip();
+  const usedNames = new Set();
+  for (let i = 0; i < photos.length; i++) {
+    if (button) button.textContent = `ZIP作成中... ${i + 1}/${photos.length}`;
+    const photo = photos[i];
+    const res = await fetch(photo.url);
+    if (!res.ok) throw new Error(`${i + 1}枚目の写真を取得できませんでした`);
+    const blob = await res.blob();
+    const ext = photoExtension(blob.type, photo.url);
+    const folder = sanitizeZipName(photo.genre || currentGenre);
+    const base = `${sanitizeZipName(photo.date)}_${String((photo.idx ?? i) + 1).padStart(2, '0')}`;
+    let name = `${folder}/${base}.${ext}`;
+    let duplicate = 2;
+    while (usedNames.has(name)) {
+      name = `${folder}/${base}_${duplicate}.${ext}`;
+      duplicate++;
+    }
+    usedNames.add(name);
+    zip.file(name, blob);
+  }
+  if (button) button.textContent = 'ZIP圧縮中...';
+  const zipBlob = await zip.generateAsync({ type: 'blob' });
+  const a = document.createElement('a');
+  const objectUrl = URL.createObjectURL(zipBlob);
+  a.href = objectUrl;
+  a.download = `${sanitizeZipName(zipBaseName)}.zip`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+}
+
 window.downloadAllPhotosZip = async () => {
   const btn = document.getElementById('downloadAllBtn');
   const uid = currentUser.id;
@@ -2008,19 +1992,8 @@ window.downloadAllPhotosZip = async () => {
       btn.disabled = false;
       return;
     }
-    // iOSでも動く方式：新しいタブで順番に開く
-    // ユーザーに案内してから開始
-    const ok = confirm(`${allUrls.length}枚の写真を順番に新しいタブで開きます。
-各写真を長押し→「写真に保存」で保存してください。
-
-続けますか？`);
-    if (!ok) { btn.textContent = '📦 まとめて保存'; btn.disabled = false; return; }
-    for (let i = 0; i < allUrls.length; i++) {
-      btn.textContent = `${i+1}/${allUrls.length}枚目...`;
-      window.open(allUrls[i].url, '_blank');
-      await new Promise(r => setTimeout(r, 1200));
-    }
-    btn.textContent = `✅ ${allUrls.length}枚完了`;
+    await downloadPhotosAsZip(allUrls, btn, `shuji_photos_${today()}`);
+    btn.textContent = `✅ ${allUrls.length}枚をZIP保存`;
     setTimeout(() => { btn.textContent = '📦 まとめて保存'; btn.disabled = false; }, 3000);
   } catch(err) {
     alert('エラー: ' + err.message);
@@ -2083,7 +2056,6 @@ function askDelStudent(u,d){window.askDelStudent&&window.askDelStudent(u,d)}
 function confirmDelStudent(){window.confirmDelStudent&&window.confirmDelStudent()}
 function closeDelStudent(){window.closeDelStudent&&window.closeDelStudent()}
 function askDelEntryTeacher(u,k,d,g){window.askDelEntryTeacher&&window.askDelEntryTeacher(u,k,d,g)}
-function deleteStoragePhoto(u,g,k,i){window.deleteStoragePhoto&&window.deleteStoragePhoto(u,g,k,i)}
 function exportStudentPDF(u){window.exportStudentPDF&&window.exportStudentPDF(u)}
 function exportStudentCSV(u){window.exportStudentCSV&&window.exportStudentCSV(u)}
 function openTeacherRankEdit(g){window.openTeacherRankEdit&&window.openTeacherRankEdit(g)}
