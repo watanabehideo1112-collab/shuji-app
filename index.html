@@ -329,7 +329,10 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--paper);color:var(--t
               <button class="day-memo-tab" data-day="sat" onclick="switchDayMemo('sat')">土曜日</button>
               <button class="day-memo-tab" data-day="sun" onclick="switchDayMemo('sun')">日曜日</button>
             </div>
-            <textarea id="dayMemoTabInput" placeholder="例: 月曜クラスは筆圧が課題、来週は楷書から..." style="width:100%;font-size:13px;border:0.5px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;background:var(--paper);resize:vertical;min-height:120px;font-family:var(--font-sans)"></textarea>
+            <div style="font-size:12px;font-weight:700;color:var(--purple2);margin-bottom:6px">毎週覚えておくこと</div>
+            <textarea id="dayMemoTabInput" oninput="autoResizeDayMemoTextareas()" placeholder="例: 木曜クラスで毎週確認すること、次回やること..." style="width:100%;font-size:14px;line-height:1.6;border:0.5px solid var(--border);border-radius:var(--radius-sm);padding:14px 16px;background:var(--paper);resize:vertical;min-height:220px;overflow:hidden;font-family:var(--font-sans)"></textarea>
+            <div style="font-size:12px;font-weight:700;color:var(--purple2);margin:14px 0 6px">長期間覚えておくこと</div>
+            <textarea id="dayMemoLongTabInput" oninput="autoResizeDayMemoTextareas()" placeholder="例: しばらく続く予定、長めに覚えておきたい注意点..." style="width:100%;font-size:14px;line-height:1.6;border:0.5px solid var(--border);border-radius:var(--radius-sm);padding:14px 16px;background:var(--paper);resize:vertical;min-height:160px;overflow:hidden;font-family:var(--font-sans)"></textarea>
             <button class="save-btn" style="width:100%;margin-top:8px" onclick="saveDayMemoTab()">保存する</button>
             <div id="dayMemoSaved" style="font-size:12px;color:#06a847;text-align:center;margin-top:6px;min-height:18px"></div>
           </div>
@@ -1286,14 +1289,14 @@ window.switchTeacherTab = (tab) => {
   document.getElementById('teacherFeed').style.display = tab==='daymemo' ? 'block' : 'none';
   if (tab==='daymemo') {
     loadDayMemos().then(() => {
-      const el = document.getElementById('dayMemoTabInput');
-      if (el) el.value = dayMemoCache[currentDayMemo] || '';
+      setDayMemoInputs(currentDayMemo);
     });
   }
 };
 
 window.openStudentDetail = async (uid) => {
   sdCurrentUid = uid;
+  removeLegacyTeacherMemoBlocks();
   document.getElementById('sdRankEditPanel').style.display = 'none';
   const sdDateEl = document.getElementById('sdTeacherDate'); if(sdDateEl) sdDateEl.value = today();
   const pdfBtn = document.getElementById('sdExportPdfBtn'); if(pdfBtn) pdfBtn.dataset.uid = uid;
@@ -1342,6 +1345,7 @@ window.openStudentDetail = async (uid) => {
     });
   }
   document.getElementById('studentDetailOverlay').classList.add('open');
+  removeLegacyTeacherMemoBlocks();
 };
 window.closeStudentDetail = () => { document.getElementById('studentDetailOverlay').classList.remove('open'); teacherPendingFiles = []; };
 
@@ -1377,22 +1381,61 @@ window.addTeacherEntry = async () => {
 let currentDayMemo = 'mon';
 let dayMemoCache = {};
 
+function removeLegacyTeacherMemoBlocks() {
+  const overlay = document.getElementById('studentDetailOverlay');
+  if (!overlay) return;
+  overlay.querySelectorAll('div').forEach(el => {
+    const text = el.textContent || '';
+    if (text.includes('先生メモ') && text.includes('個人メモ')) {
+      el.remove();
+    }
+  });
+}
+
+function normalizeDayMemo(value) {
+  if (!value) return { weekly: '', longTerm: '' };
+  if (typeof value === 'string') return { weekly: value, longTerm: '' };
+  return {
+    weekly: value.weekly || value.memo || '',
+    longTerm: value.longTerm || ''
+  };
+}
+
+function autoResizeTextarea(el) {
+  if (!el) return;
+  el.style.height = 'auto';
+  el.style.height = Math.max(el.scrollHeight + 2, parseInt(el.style.minHeight || '0', 10)) + 'px';
+}
+
+window.autoResizeDayMemoTextareas = () => {
+  autoResizeTextarea(document.getElementById('dayMemoTabInput'));
+  autoResizeTextarea(document.getElementById('dayMemoLongTabInput'));
+};
+
+function setDayMemoInputs(day) {
+  const memo = normalizeDayMemo(dayMemoCache[day]);
+  const weeklyEl = document.getElementById('dayMemoTabInput');
+  const longEl = document.getElementById('dayMemoLongTabInput');
+  if (weeklyEl) weeklyEl.value = memo.weekly;
+  if (longEl) longEl.value = memo.longTerm;
+  requestAnimationFrame(() => autoResizeDayMemoTextareas());
+}
+
 window.switchDayMemo = (day) => {
   currentDayMemo = day;
   document.querySelectorAll('.day-memo-tab').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.day === day);
   });
-  const el = document.getElementById('dayMemoInput');
-  if (el) el.value = dayMemoCache[day] || '';
-  const el2 = document.getElementById('dayMemoTabInput');
-  if (el2) el2.value = dayMemoCache[day] || '';
+  setDayMemoInputs(day);
 };
 
 
 window.saveDayMemoTab = async () => {
-  const memo = document.getElementById('dayMemoTabInput').value.trim();
+  const weekly = document.getElementById('dayMemoTabInput').value.trim();
+  const longTerm = document.getElementById('dayMemoLongTabInput').value.trim();
+  const memo = { weekly, longTerm };
   dayMemoCache[currentDayMemo] = memo;
-  if (memo) {
+  if (weekly || longTerm) {
     await db.ref(`day_memos/${currentDayMemo}`).set(memo);
   } else {
     await db.ref(`day_memos/${currentDayMemo}`).remove();
@@ -1402,30 +1445,12 @@ window.saveDayMemoTab = async () => {
     saved.textContent = '✅ 保存しました';
     setTimeout(() => { saved.textContent = ''; }, 2000);
   }
-  // 生徒詳細内のメモも同期
-  const el = document.getElementById('dayMemoInput');
-  if (el) el.value = memo;
-};
-
-window.saveDayMemo = async () => {
-  const memo = document.getElementById('dayMemoInput').value.trim();
-  dayMemoCache[currentDayMemo] = memo;
-  if (memo) {
-    await db.ref(`day_memos/${currentDayMemo}`).set(memo);
-  } else {
-    await db.ref(`day_memos/${currentDayMemo}`).remove();
-  }
-  const btn = event.target;
-  const orig = btn.textContent;
-  btn.textContent = '✅ 保存済';
-  setTimeout(() => btn.textContent = orig, 1500);
 };
 
 async function loadDayMemos() {
   const snap = await db.ref('day_memos').once('value');
   dayMemoCache = snap.val() || {};
-  const el = document.getElementById('dayMemoInput');
-  if (el) el.value = dayMemoCache['mon'] || '';
+  setDayMemoInputs(currentDayMemo);
 }
 
 window.saveLineKeyword = async () => {
