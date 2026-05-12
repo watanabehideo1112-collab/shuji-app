@@ -111,15 +111,19 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--paper);color:var(--t
 .view-tabs{display:flex;gap:6px;margin-bottom:1rem}
 .view-tab{flex:1;padding:8px;text-align:center;font-size:13px;font-weight:500;border-radius:var(--radius-sm);border:0.5px solid var(--border);cursor:pointer;background:var(--paper);color:var(--text-sub);font-family:'Noto Sans JP',sans-serif;transition:all .15s}
 .view-tab.active{background:var(--ink);color:#fff;border-color:transparent}
-.student-card{padding:12px 16px;border-bottom:0.5px solid var(--border);cursor:pointer;transition:background .1s}
+.student-card{padding:12px 16px;border-bottom:0.5px solid var(--border);cursor:pointer;transition:background .1s,border-color .1s}
+.student-card.paid{background:rgba(6,199,85,.08);border-left:4px solid #06c755}
 .student-card:last-child{border-bottom:none}
 .student-card:hover{background:var(--paper)}
+.student-card.paid:hover{background:rgba(6,199,85,.12)}
 .student-name{font-size:14px;font-weight:500;margin-bottom:4px}
 .student-ranks{display:flex;gap:6px;flex-wrap:wrap}
 .student-rank-badge{font-size:11px;padding:2px 9px;border-radius:99px}
 .badge-毛筆{background:rgba(102,126,234,.12);color:var(--purple2)}
 .badge-硬筆{background:rgba(67,233,123,.12);color:#0d6e3d}
 .student-updated{font-size:11px;color:var(--text-sub);margin-top:4px}
+.payment-btn{background:rgba(245,158,11,.1);color:#b45309;border-color:rgba(245,158,11,.25)}
+.payment-btn.paid{background:rgba(6,199,85,.14);color:#059669;border-color:rgba(6,199,85,.3)}
 
 .overlay{display:none;position:fixed;inset:0;background:rgba(26,26,46,.55);z-index:200;align-items:center;justify-content:center;padding:1rem;backdrop-filter:blur(4px)}
 #confirmOverlay,#historyOverlay,#delEntryOverlay,#delStudentOverlay,#dayPickerOverlay{z-index:400}
@@ -328,6 +332,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--paper);color:var(--t
               <button class="day-memo-tab" data-day="fri" onclick="switchDayMemo('fri')">金曜日</button>
               <button class="day-memo-tab" data-day="sat" onclick="switchDayMemo('sat')">土曜日</button>
               <button class="day-memo-tab" data-day="sun" onclick="switchDayMemo('sun')">日曜日</button>
+              <button class="day-memo-tab" data-day="all" onclick="switchDayMemo('all')">全体メモ</button>
             </div>
             <div style="font-size:12px;font-weight:700;color:var(--purple2);margin-bottom:6px">毎週覚えておくこと</div>
             <textarea id="dayMemoTabInput" oninput="autoResizeDayMemoTextareas()" placeholder="例: 木曜クラスで毎週確認すること、次回やること..." style="width:100%;font-size:14px;line-height:1.6;border:0.5px solid var(--border);border-radius:var(--radius-sm);padding:14px 16px;background:var(--paper);resize:vertical;min-height:220px;overflow:hidden;font-family:var(--font-sans)"></textarea>
@@ -1228,11 +1233,22 @@ function getLatestTs(d) {
   return ts || null;
 }
 
+function currentPaymentMonth() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+}
+
+function currentPaymentMonthLabel() {
+  return `${new Date().getMonth() + 1}月`;
+}
+
 function renderStudentList(data) {
   cachedStudentData = data;
   const list = document.getElementById('studentList');
   let entries = sortStudents(Object.entries(data));
   if (!entries.length) { list.innerHTML = '<div class="empty">まだ生徒の記録がありません</div>'; return; }
+  const paymentMonth = currentPaymentMonth();
+  const paymentLabel = currentPaymentMonthLabel();
   list.innerHTML = entries.map(([uid, d]) => {
     const ranks = d.ranks || {};
     const display = d.display || uid;
@@ -1241,17 +1257,20 @@ function renderStudentList(data) {
     ).filter(Boolean).join('');
     const latest = getLatestTs(d);
     const dayLabel = d.lessonDay ? DAY_LABELS[d.lessonDay] : null;
-    return `<div class="student-card" onclick="openStudentDetail('${uid}')">
+    const paid = !!d.payments?.[paymentMonth];
+    return `<div class="student-card${paid ? ' paid' : ''}" onclick="openStudentDetail('${uid}')">
       <div style="display:flex;align-items:flex-start;justify-content:space-between">
         <div>
           <div class="student-name">
             ${display}
             ${dayLabel ? `<span style="font-size:11px;font-weight:400;margin-left:6px;padding:2px 8px;border-radius:99px;background:rgba(102,126,234,.1);color:var(--purple2)">${dayLabel}曜日</span>` : ''}
+            ${paid ? `<span style="font-size:11px;font-weight:500;margin-left:6px;padding:2px 8px;border-radius:99px;background:rgba(6,199,85,.14);color:#059669">${paymentLabel}受領済</span>` : ''}
           </div>
           <div class="student-ranks" style="margin-top:4px">${badges||'<span style="font-size:12px;color:var(--text-sub)">段位未設定</span>'}</div>
           ${latest?`<div class="student-updated">最終更新: ${fmtDT(latest)}</div>`:''}
         </div>
         <div style="display:flex;gap:5px;flex-shrink:0;margin-left:8px;flex-wrap:wrap;justify-content:flex-end">
+          <button class="graph-btn payment-btn${paid ? ' paid' : ''}" onclick="event.stopPropagation();togglePaymentReceived('${uid}')">${paid ? `✅ ${paymentLabel}受領済` : `${paymentLabel}受領`}</button>
           <button class="graph-btn" style="background:rgba(6,199,85,.1);color:#06c755;border-color:rgba(6,199,85,.25)" onclick="event.stopPropagation();copyLineSearch('${display}','${uid}')" id="line-copy-${uid}">📋 LINE検索用</button>
           <button class="graph-btn" onclick="event.stopPropagation();openDayPicker('${uid}','${display}')">曜日</button>
           <button class="student-del-btn" style="position:static;margin:0" onclick="event.stopPropagation();askDelStudent('${uid}','${display}')">削除</button>
@@ -1260,6 +1279,17 @@ function renderStudentList(data) {
     </div>`;
   }).join('');
 }
+
+window.togglePaymentReceived = async (uid) => {
+  const month = currentPaymentMonth();
+  const paid = !!cachedStudentData?.[uid]?.payments?.[month];
+  const ref = db.ref(`students/${uid}/payments/${month}`);
+  if (paid) {
+    await ref.remove();
+  } else {
+    await ref.set({ received: true, ts: Date.now() });
+  }
+};
 
 function renderFeed(data) {
   const list = document.getElementById('feedList');
@@ -2068,6 +2098,7 @@ function saveLineKeyword(){window.saveLineKeyword&&window.saveLineKeyword()}
 function copyLineSearch(d,u){window.copyLineSearch&&window.copyLineSearch(d,u)}
 function openDayPicker(u,d){window.openDayPicker&&window.openDayPicker(u,d)}
 function saveLessonDay(d){window.saveLessonDay&&window.saveLessonDay(d)}
+function togglePaymentReceived(u){window.togglePaymentReceived&&window.togglePaymentReceived(u)}
 function closeDayPicker(){window.closeDayPicker&&window.closeDayPicker()}
 function setStudentSort(m){window.setStudentSort&&window.setStudentSort(m)}
 function openMyHistory(){window.openMyHistory&&window.openMyHistory()}
