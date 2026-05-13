@@ -116,14 +116,18 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--paper);color:var(--t
 .student-card:last-child{border-bottom:none}
 .student-card:hover{background:var(--paper)}
 .student-card.paid:hover{background:rgba(6,199,85,.12)}
-.student-name{font-size:14px;font-weight:500;margin-bottom:4px}
+.student-card-main{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.student-info{flex:1;min-width:0}
+.student-name{font-size:14px;font-weight:500;margin-bottom:4px;line-height:1.45;word-break:keep-all}
 .student-ranks{display:flex;gap:6px;flex-wrap:wrap}
-.student-rank-badge{font-size:11px;padding:2px 9px;border-radius:99px}
+.student-rank-badge{font-size:11px;padding:2px 9px;border-radius:99px;white-space:nowrap}
 .badge-毛筆{background:rgba(102,126,234,.12);color:var(--purple2)}
 .badge-硬筆{background:rgba(67,233,123,.12);color:#0d6e3d}
 .student-updated{font-size:11px;color:var(--text-sub);margin-top:4px}
 .payment-btn{background:rgba(245,158,11,.1);color:#b45309;border-color:rgba(245,158,11,.25)}
 .payment-btn.paid{background:rgba(6,199,85,.14);color:#059669;border-color:rgba(6,199,85,.3)}
+.student-actions{display:flex;gap:6px;flex-shrink:0;margin-left:8px;flex-wrap:wrap;justify-content:flex-end}
+.student-actions .graph-btn,.student-actions .student-del-btn{margin:0;white-space:nowrap}
 
 .overlay{display:none;position:fixed;inset:0;background:rgba(26,26,46,.55);z-index:200;align-items:center;justify-content:center;padding:1rem;backdrop-filter:blur(4px)}
 #confirmOverlay,#historyOverlay,#delEntryOverlay,#delStudentOverlay,#dayPickerOverlay{z-index:400}
@@ -188,6 +192,22 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--paper);color:var(--t
 .day-memo-tab{padding:4px 10px;border-radius:99px;border:0.5px solid var(--border);background:var(--paper);color:var(--text-sub);font-size:12px;cursor:pointer;font-family:'Noto Sans JP',sans-serif}
 .day-memo-tab.active{background:linear-gradient(135deg,var(--purple),var(--purple2));color:#fff;border-color:transparent}
 .day-pick-btn:hover{opacity:.88}
+
+@media (max-width: 640px) {
+  .student-card{padding:14px 16px}
+  .student-card-main{display:block}
+  .student-info{width:100%}
+  .student-name{font-size:16px;margin-bottom:8px;word-break:normal}
+  .student-ranks{margin-top:6px!important}
+  .student-rank-badge{font-size:12px;padding:4px 10px}
+  .student-updated{font-size:12px;margin-top:8px;line-height:1.5}
+  .student-actions{margin:12px 0 0;justify-content:flex-start;gap:7px}
+  .student-actions .graph-btn,.student-actions .student-del-btn{font-size:12px;padding:6px 11px}
+  .exh-grid{grid-template-columns:1fr;padding:12px}
+  .exh-toolbar{align-items:flex-start}
+  .exh-student-row{grid-template-columns:1fr;gap:6px;padding:12px 0}
+  .exh-form-grid{grid-template-columns:1fr}
+}
 .modal-danger:hover{opacity:.9}
 
 /* エクスポート */
@@ -199,6 +219,47 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--paper);color:var(--t
 .detail-row{display:flex;gap:10px;font-size:13px;margin-bottom:6px}
 .detail-label{color:var(--text-sub);min-width:60px;flex-shrink:0}
 .detail-val{color:var(--text);flex:1;line-height:1.6}
+.exh-toolbar{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 16px;border-bottom:0.5px solid var(--border)}
+.exh-add-btn{border:none;border-radius:99px;background:linear-gradient(135deg,var(--purple),var(--purple2));color:#fff;font-size:12px;font-weight:700;padding:7px 13px;cursor:pointer;font-family:var(--font-sans);white-space:nowrap}
+.exh-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:18px;padding:16px}
+.exh-card{border:0.5px solid var(--border);border-radius:18px;background:#fff;overflow:hidden;box-shadow:0 12px 32px rgba(26,26,46,.08)}
+.exh-image{height:150px;background:#f5f2ed;display:flex;align-items:center;justify-content:center;color:#aaa;font-size:14px;border-bottom:0.5px solid var(--border);cursor:pointer}
+.exh-image img{width:100%;height:100%;object-fit:cover;display:block}
+.exh-image{position:relative}
+.exh-image-count{position:absolute;right:10px;bottom:10px;background:rgba(26,26,46,.72);color:#fff;border-radius:99px;font-size:12px;padding:4px 9px}
+.exh-card-body{padding:16px}
+.exh-card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:12px}
+.exh-title{font-size:17px;font-weight:700;line-height:1.45;color:var(--text)}
+.exh-badge{font-size:12px;padding:5px 12px;border-radius:99px;white-space:nowrap;background:rgba(102,126,234,.1);color:var(--purple2)}
+.exh-badge.paid{background:rgba(6,199,85,.14);color:#27710f}
+.exh-badge.unpaid{background:rgba(220,38,38,.08);color:#9f2d14}
+.exh-chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+.exh-chip{font-size:12px;padding:5px 10px;border-radius:99px;background:var(--paper);border:0.5px solid var(--border);color:var(--text-sub)}
+.exh-chip.warn{background:rgba(245,158,11,.12);border-color:rgba(245,158,11,.25);color:#b45309}
+.exh-chip.urgent{background:rgba(220,38,38,.08);border-color:rgba(220,38,38,.2);color:#dc2626}
+.exh-note{font-size:14px;color:var(--text-sub);line-height:1.65;background:var(--paper);border-radius:10px;padding:12px 14px;min-height:56px;margin:12px 0 14px}
+.exh-card-foot{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.exh-action{border:0.5px solid var(--border);border-radius:99px;background:var(--paper);color:var(--text-sub);font-size:12px;padding:7px 11px;cursor:pointer;font-family:var(--font-sans)}
+.exh-action.primary{flex:1;background:#fff;color:var(--text-sub);border-color:var(--border);display:flex;align-items:center;justify-content:center;gap:8px;min-width:160px}
+.exh-action.danger{background:rgba(220,38,38,.06);color:#dc2626;border-color:rgba(220,38,38,.22)}
+.exh-detail{padding:14px 16px}
+.exh-detail-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:12px}
+.exh-meta{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.exh-student-row{display:grid;grid-template-columns:minmax(90px,1fr) auto minmax(110px,1.4fr) auto;gap:8px;align-items:center;padding:9px 0;border-bottom:0.5px solid var(--border)}
+.exh-student-name{font-size:13px;font-weight:500}
+.exh-pay-btn{border:none;border-radius:99px;font-size:12px;padding:5px 10px;font-family:var(--font-sans);cursor:pointer;background:rgba(220,38,38,.08);color:#dc2626}
+.exh-pay-btn.paid{background:rgba(6,199,85,.14);color:#059669}
+.exh-note-input{width:100%;border:0.5px solid var(--border);border-radius:8px;background:var(--paper);font-size:12px;padding:6px 8px;font-family:var(--font-sans)}
+.exh-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.exh-modal-label{font-size:11px;color:var(--text-sub);display:block;margin:10px 0 4px}
+.exh-student-picker-list{max-height:54vh;overflow:auto;margin-top:12px;border:0.5px solid var(--border);border-radius:12px;background:#fff}
+.exh-picker-row{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:0.5px solid var(--border);font-size:14px;cursor:pointer}
+.exh-picker-row:last-child{border-bottom:none}
+.exh-picker-row input{width:18px;height:18px;flex-shrink:0}
+.exh-picker-row.disabled{color:#aaa;background:var(--paper);cursor:default}
+.exh-photo-drop{margin-top:10px;border:1px dashed var(--border);border-radius:12px;background:var(--paper);padding:16px;text-align:center;color:var(--text-sub);font-size:13px;cursor:pointer}
+.exh-photo-previews{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.exh-photo-preview{width:58px;height:58px;border-radius:8px;object-fit:cover;border:0.5px solid var(--border)}
 .grid-cell img {
   -webkit-touch-callout: default;
   -webkit-user-select: auto;
@@ -300,6 +361,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--paper);color:var(--t
       <div class="view-tabs">
         <div class="view-tab active" onclick="switchTeacherTab('students')">生徒一覧</div>
         <div class="view-tab" onclick="switchTeacherTab('daymemo')">曜日別メモ</div>
+        <div class="view-tab" onclick="switchTeacherTab('exhibitions')">展覧会管理</div>
       </div>
       <div id="teacherStudents">
         <div class="card">
@@ -340,6 +402,33 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--paper);color:var(--t
             <textarea id="dayMemoLongTabInput" oninput="autoResizeDayMemoTextareas()" placeholder="例: しばらく続く予定、長めに覚えておきたい注意点..." style="width:100%;font-size:14px;line-height:1.6;border:0.5px solid var(--border);border-radius:var(--radius-sm);padding:14px 16px;background:var(--paper);resize:vertical;min-height:160px;overflow:hidden;font-family:var(--font-sans)"></textarea>
             <button class="save-btn" style="width:100%;margin-top:8px" onclick="saveDayMemoTab()">保存する</button>
             <div id="dayMemoSaved" style="font-size:12px;color:#06a847;text-align:center;margin-top:6px;min-height:18px"></div>
+          </div>
+        </div>
+      </div>
+      <div id="teacherExhibitions" style="display:none">
+        <div class="card">
+          <div id="exhListView">
+            <div class="exh-toolbar">
+              <div>
+                <div class="card-head-label">展覧会管理</div>
+                <div style="font-size:12px;color:var(--text-sub);margin-top:4px">出品予定・出品料・入金状況をまとめて管理します</div>
+              </div>
+              <button class="exh-add-btn" onclick="openExhModal()">＋ 展覧会を追加</button>
+            </div>
+            <div id="exhCards" class="exh-grid"><div class="loading">読み込み中...</div></div>
+          </div>
+          <div id="exhDetailView" style="display:none">
+            <div class="exh-detail">
+              <button class="exh-action" onclick="backExhList()">← 一覧に戻る</button>
+              <div class="exh-detail-head" style="margin-top:12px">
+                <div>
+                  <div class="exh-title" id="exhDetailTitle"></div>
+                  <div class="exh-meta" id="exhDetailMeta"></div>
+                </div>
+                <button class="exh-add-btn" onclick="addExhStudent()">＋ 生徒を追加</button>
+              </div>
+              <div id="exhStudentRows"></div>
+            </div>
           </div>
         </div>
       </div>
@@ -494,6 +583,67 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--paper);color:var(--t
       <button class="day-pick-btn" style="background:var(--paper);color:var(--text-sub)" onclick="saveLessonDay(null)">設定なし</button>
     </div>
     <button class="modal-cancel" style="width:100%" onclick="closeDayPicker()">キャンセル</button>
+  </div>
+</div>
+
+<!-- 展覧会追加・編集モーダル -->
+<div class="overlay" id="exhModalOverlay">
+  <div class="modal" style="max-width:440px">
+    <h3 id="exhModalTitle">展覧会を追加</h3>
+    <label class="exh-modal-label">展覧会名</label>
+    <input id="exhNameInput" type="text" placeholder="例：春の書展" style="width:100%;font-size:13px" />
+    <div class="exh-form-grid">
+      <div>
+        <label class="exh-modal-label">作品〆切</label>
+        <input id="exhDeadlineInput" type="date" style="width:100%;font-size:13px" />
+      </div>
+      <div>
+        <label class="exh-modal-label">開催日</label>
+        <input id="exhStartInput" type="date" style="width:100%;font-size:13px" />
+      </div>
+    </div>
+    <div class="exh-form-grid">
+      <div>
+        <label class="exh-modal-label">出品料</label>
+        <input id="exhFeeInput" type="number" min="0" placeholder="例：5000" style="width:100%;font-size:13px" />
+      </div>
+      <div>
+        <label class="exh-modal-label">状態</label>
+        <select id="exhStatusInput" style="width:100%;font-size:13px">
+          <option value="open">受付中</option>
+          <option value="preparing">準備中</option>
+          <option value="closed">終了</option>
+        </select>
+      </div>
+    </div>
+    <label class="exh-modal-label">メモ</label>
+    <textarea id="exhNoteInput" placeholder="搬入予定、作品テーマ、注意点など..." style="width:100%;font-size:13px;min-height:80px"></textarea>
+    <div class="exh-photo-drop" onclick="document.getElementById('exhPhotoInput').click()">
+      画像を追加（複数可）
+      <input id="exhPhotoInput" type="file" accept="image/*" multiple style="display:none" onchange="handleExhPhotos(event)" />
+    </div>
+    <div id="exhPhotoPreviews" class="exh-photo-previews"></div>
+    <div class="modal-btns" style="margin-top:1rem">
+      <button type="button" class="modal-cancel" onclick="window.closeExhModal()">キャンセル</button>
+      <button type="button" class="modal-ok" id="exhSaveBtn" onclick="window.saveExh()">保存する</button>
+    </div>
+  </div>
+</div>
+
+<!-- 展覧会参加生徒追加モーダル -->
+<div class="overlay" id="exhStudentPickerOverlay">
+  <div class="modal" style="max-width:440px">
+    <h3>参加生徒を追加</h3>
+    <p style="margin-top:.4rem">追加したい生徒をタッチで選んでください。</p>
+    <div style="display:flex;gap:8px;margin-top:12px">
+      <button class="exh-action primary" onclick="selectAllExhStudents()">全員追加</button>
+      <button class="exh-action" onclick="clearExhStudentSelection()">選択解除</button>
+    </div>
+    <div id="exhStudentPickerList" class="exh-student-picker-list"></div>
+    <div class="modal-btns" style="margin-top:1rem">
+      <button type="button" class="modal-cancel" onclick="closeExhStudentPicker()">キャンセル</button>
+      <button type="button" class="modal-ok" onclick="savePickedExhStudents()">追加する</button>
+    </div>
   </div>
 </div>
 
@@ -702,6 +852,11 @@ let entrySortOrder = 'date-desc';
 let cachedEntries = null;
 let studentSortMode = 'all';
 let cachedStudentData = null;
+let cachedExhibitions = {};
+let currentExhId = null;
+let editingExhId = null;
+let exhPickerSelected = new Set();
+let exhPendingFiles = [];
 let pendingDelEntryKey = null;
 let pendingDelStudentUid = null;
 const DAYS = ['sun','mon','tue','wed','thu','fri','sat'];
@@ -732,6 +887,17 @@ async function uploadPhotosToStorage(uid, genre, entryKey, files) {
     urls.push(url);
   }
   photoUrlCache[`${uid}_${genre}_${entryKey}`] = urls;
+  return urls;
+}
+
+async function uploadExhImages(exhId, files) {
+  const urls = [];
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i];
+    const path = `exhibitions/${exhId}/images/${Date.now()}_${i}_${file.name || 'image'}`;
+    const uploadTask = await storage.ref(path).put(file);
+    urls.push(await uploadTask.ref.getDownloadURL());
+  }
   return urls;
 }
 
@@ -1221,6 +1387,13 @@ function listenTeacher() {
   unsubFns.push(db.ref('students').on('value', snap => {
     const data = snap.val() || {};
     renderStudentList(data); renderFeed(data);
+    if (document.getElementById('teacherExhibitions')?.style.display === 'block') renderExhList();
+    if (currentExhId) renderExhDetail();
+  }));
+  unsubFns.push(db.ref('exhibitions').on('value', snap => {
+    cachedExhibitions = snap.val() || {};
+    renderExhList();
+    if (currentExhId) renderExhDetail();
   }));
 }
 
@@ -1259,8 +1432,8 @@ function renderStudentList(data) {
     const dayLabel = d.lessonDay ? DAY_LABELS[d.lessonDay] : null;
     const paid = !!d.payments?.[paymentMonth];
     return `<div class="student-card${paid ? ' paid' : ''}" onclick="openStudentDetail('${uid}')">
-      <div style="display:flex;align-items:flex-start;justify-content:space-between">
-        <div>
+      <div class="student-card-main">
+        <div class="student-info">
           <div class="student-name">
             ${display}
             ${dayLabel ? `<span style="font-size:11px;font-weight:400;margin-left:6px;padding:2px 8px;border-radius:99px;background:rgba(102,126,234,.1);color:var(--purple2)">${dayLabel}曜日</span>` : ''}
@@ -1269,7 +1442,7 @@ function renderStudentList(data) {
           <div class="student-ranks" style="margin-top:4px">${badges||'<span style="font-size:12px;color:var(--text-sub)">段位未設定</span>'}</div>
           ${latest?`<div class="student-updated">最終更新: ${fmtDT(latest)}</div>`:''}
         </div>
-        <div style="display:flex;gap:5px;flex-shrink:0;margin-left:8px;flex-wrap:wrap;justify-content:flex-end">
+        <div class="student-actions">
           <button class="graph-btn payment-btn${paid ? ' paid' : ''}" onclick="event.stopPropagation();togglePaymentReceived('${uid}')">${paid ? `✅ ${paymentLabel}受領済` : `${paymentLabel}受領`}</button>
           <button class="graph-btn" style="background:rgba(6,199,85,.1);color:#06c755;border-color:rgba(6,199,85,.25)" onclick="event.stopPropagation();copyLineSearch('${display}','${uid}')" id="line-copy-${uid}">📋 LINE検索用</button>
           <button class="graph-btn" onclick="event.stopPropagation();openDayPicker('${uid}','${display}')">曜日</button>
@@ -1314,14 +1487,337 @@ function renderFeed(data) {
 }
 
 window.switchTeacherTab = (tab) => {
-  document.querySelectorAll('.view-tab').forEach((t,i) => t.classList.toggle('active', ['students','daymemo'][i]===tab));
+  document.querySelectorAll('.view-tab').forEach((t,i) => t.classList.toggle('active', ['students','daymemo','exhibitions'][i]===tab));
   document.getElementById('teacherStudents').style.display = tab==='students' ? 'block' : 'none';
   document.getElementById('teacherFeed').style.display = tab==='daymemo' ? 'block' : 'none';
+  document.getElementById('teacherExhibitions').style.display = tab==='exhibitions' ? 'block' : 'none';
   if (tab==='daymemo') {
     loadDayMemos().then(() => {
       setDayMemoInputs(currentDayMemo);
     });
   }
+  if (tab==='exhibitions') renderExhList();
+};
+
+function escapeHtml(value) {
+  return String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+}
+
+function fmtShortDate(value) {
+  if (!value) return '';
+  const d = new Date(value + 'T00:00:00');
+  if (Number.isNaN(d.getTime())) return value;
+  return `${d.getMonth() + 1}/${d.getDate()}`;
+}
+
+function daysUntilDate(value) {
+  if (!value) return null;
+  const target = new Date(value + 'T00:00:00');
+  const todayDate = new Date();
+  todayDate.setHours(0,0,0,0);
+  return Math.ceil((target - todayDate) / 86400000);
+}
+
+function exhDateChip(label, value) {
+  if (!value) return '';
+  const days = daysUntilDate(value);
+  let cls = 'exh-chip';
+  let suffix = '';
+  if (days !== null && days < 0) { cls += ' urgent'; suffix = ' 経過'; }
+  else if (days !== null && days <= 7) { cls += ' warn'; suffix = ` あと${days}日`; }
+  return `<span class="${cls}">${label} ${fmtShortDate(value)}${suffix}</span>`;
+}
+
+function exhArray() {
+  return Object.entries(cachedExhibitions || {}).map(([id, ex]) => ({ id, ...(ex || {}) }))
+    .sort((a,b) => (a.deadline || a.start || '9999').localeCompare(b.deadline || b.start || '9999'));
+}
+
+function renderExhList() {
+  const wrap = document.getElementById('exhCards');
+  if (!wrap) return;
+  const list = exhArray();
+  if (!list.length) {
+    wrap.innerHTML = '<div class="empty">まだ展覧会がありません</div>';
+    return;
+  }
+  const statusLabel = { open:'受付中', preparing:'準備中', closed:'終了' };
+  wrap.innerHTML = list.map(ex => {
+    const students = ex.students || {};
+    const total = Object.keys(students).length;
+    const paid = Object.values(students).filter(s => s && s.paid).length;
+    const fee = Number(ex.fee || 0);
+    const imageUrls = ex.imageUrls || (ex.imageUrl ? [ex.imageUrl] : []);
+    const img = imageUrls[0]
+      ? `<img src="${escapeHtml(imageUrls[0])}" alt="${escapeHtml(ex.name || '展覧会')}" onerror="this.parentElement.innerHTML='画像を追加'">${imageUrls.length > 1 ? `<span class="exh-image-count">+${imageUrls.length - 1}枚</span>` : ''}`
+      : '画像を追加';
+    const allPaid = total > 0 && paid === total;
+    return `<div class="exh-card">
+      <div class="exh-image" onclick="openExhImageViewer('${ex.id}')">${img}</div>
+      <div class="exh-card-body">
+        <div class="exh-card-head">
+          <div class="exh-title">${escapeHtml(ex.name || '名称未設定')}</div>
+          <span class="exh-badge ${allPaid ? 'paid' : 'unpaid'}">${allPaid ? '入金済み' : '未払い'}</span>
+        </div>
+        <div class="exh-chips">
+          ${exhDateChip('〆切', ex.deadline)}
+          ${exhDateChip('開催', ex.start)}
+          ${fee ? `<span class="exh-chip">出品料 ¥${fee.toLocaleString()}</span>` : ''}
+        </div>
+        <div class="exh-note">${ex.note ? escapeHtml(ex.note) : 'メモなし'}</div>
+        <div class="exh-card-foot">
+          <button class="exh-action primary" onclick="openExhDetail('${ex.id}')">生徒の入金状況 <span class="${allPaid ? 'pip ok' : 'pip warn'}">${paid}/${total}人</span></button>
+          <button class="exh-action" onclick="openExhModal('${ex.id}')">編集</button>
+          <button class="exh-action danger" onclick="deleteExh('${ex.id}')">削除</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+window.openExhImageViewer = (id) => {
+  const ex = cachedExhibitions[id] || {};
+  const urls = ex.imageUrls || (ex.imageUrl ? [ex.imageUrl] : []);
+  if (!urls.length) return;
+  let idx = 0;
+  const overlay = document.createElement('div');
+  overlay.style.cssText = `
+    position:fixed;inset:0;background:rgba(0,0,0,.94);z-index:10000;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    touch-action:manipulation;
+  `;
+  const render = () => {
+    overlay.innerHTML = `
+      <div style="position:absolute;top:14px;left:16px;right:16px;display:flex;justify-content:space-between;align-items:center;color:#fff;font-size:14px;z-index:2">
+        <span>${escapeHtml(ex.name || '展覧会')} ${idx + 1}/${urls.length}</span>
+        <button id="exhViewerClose" style="border:none;border-radius:99px;background:rgba(255,255,255,.18);color:#fff;padding:8px 13px;font-size:14px">閉じる</button>
+      </div>
+      <img src="${escapeHtml(urls[idx])}" style="max-width:100%;max-height:100%;object-fit:contain;-webkit-user-select:auto;-webkit-touch-callout:default">
+      ${urls.length > 1 ? `
+        <button id="exhViewerPrev" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);border:none;border-radius:50%;width:42px;height:42px;background:rgba(255,255,255,.18);color:#fff;font-size:24px">‹</button>
+        <button id="exhViewerNext" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);border:none;border-radius:50%;width:42px;height:42px;background:rgba(255,255,255,.18);color:#fff;font-size:24px">›</button>
+      ` : ''}
+    `;
+    document.getElementById('exhViewerClose').onclick = () => overlay.remove();
+    const prev = document.getElementById('exhViewerPrev');
+    const next = document.getElementById('exhViewerNext');
+    if (prev) prev.onclick = (e) => { e.stopPropagation(); idx = (idx + urls.length - 1) % urls.length; render(); };
+    if (next) next.onclick = (e) => { e.stopPropagation(); idx = (idx + 1) % urls.length; render(); };
+  };
+  overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
+  render();
+  document.body.appendChild(overlay);
+};
+
+window.openExhModal = (id = null) => {
+  editingExhId = id;
+  exhPendingFiles = [];
+  const ex = id ? cachedExhibitions[id] || {} : {};
+  document.getElementById('exhModalTitle').textContent = id ? '展覧会を編集' : '展覧会を追加';
+  document.getElementById('exhNameInput').value = ex.name || '';
+  document.getElementById('exhDeadlineInput').value = ex.deadline || '';
+  document.getElementById('exhStartInput').value = ex.start || '';
+  document.getElementById('exhFeeInput').value = ex.fee || '';
+  document.getElementById('exhStatusInput').value = ex.status || 'open';
+  document.getElementById('exhNoteInput').value = ex.note || '';
+  renderExhPhotoPreviews();
+  document.getElementById('exhModalOverlay').classList.add('open');
+};
+
+window.closeExhModal = () => {
+  editingExhId = null;
+  exhPendingFiles = [];
+  renderExhPhotoPreviews();
+  document.getElementById('exhModalOverlay').classList.remove('open');
+};
+
+window.handleExhPhotos = (event) => {
+  exhPendingFiles = [...exhPendingFiles, ...event.target.files];
+  event.target.value = '';
+  renderExhPhotoPreviews();
+};
+
+function renderExhPhotoPreviews() {
+  const wrap = document.getElementById('exhPhotoPreviews');
+  if (!wrap) return;
+  const existing = editingExhId ? (cachedExhibitions[editingExhId]?.imageUrls || (cachedExhibitions[editingExhId]?.imageUrl ? [cachedExhibitions[editingExhId].imageUrl] : [])) : [];
+  const existingHtml = existing.map(url => `<img class="exh-photo-preview" src="${escapeHtml(url)}">`).join('');
+  const pendingHtml = exhPendingFiles.map(file => `<img class="exh-photo-preview" src="${URL.createObjectURL(file)}">`).join('');
+  wrap.innerHTML = existingHtml + pendingHtml;
+}
+
+window.saveExh = async () => {
+  const btn = document.getElementById('exhSaveBtn');
+  const original = btn ? btn.textContent : '';
+  try {
+    const name = document.getElementById('exhNameInput').value.trim();
+    if (!name) { alert('展覧会名を入力してください'); return; }
+    if (btn) { btn.disabled = true; btn.textContent = '保存中...'; }
+    const data = {
+      name,
+      deadline: document.getElementById('exhDeadlineInput').value,
+      start: document.getElementById('exhStartInput').value,
+      fee: Number(document.getElementById('exhFeeInput').value) || 0,
+      status: document.getElementById('exhStatusInput').value,
+      note: document.getElementById('exhNoteInput').value.trim(),
+      updatedAt: Date.now()
+    };
+    let exhId = editingExhId;
+    if (exhId) {
+      await db.ref(`exhibitions/${exhId}`).update(data);
+    } else {
+      data.createdAt = Date.now();
+      data.students = {};
+      const newRef = await db.ref('exhibitions').push(data);
+      exhId = newRef.key;
+    }
+    if (exhPendingFiles.length && exhId) {
+      const uploaded = await uploadExhImages(exhId, exhPendingFiles);
+      const currentImages = cachedExhibitions[exhId]?.imageUrls || (cachedExhibitions[exhId]?.imageUrl ? [cachedExhibitions[exhId].imageUrl] : []);
+      await db.ref(`exhibitions/${exhId}/imageUrls`).set([...currentImages, ...uploaded]);
+      await db.ref(`exhibitions/${exhId}/imageUrl`).remove();
+    }
+    closeExhModal();
+  } catch (err) {
+    alert('展覧会を保存できませんでした: ' + (err.message || err));
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = original || '保存する'; }
+  }
+};
+
+window.deleteExh = async (id) => {
+  const ex = cachedExhibitions[id];
+  if (!confirm(`${ex?.name || 'この展覧会'}を削除しますか？`)) return;
+  await db.ref(`exhibitions/${id}`).remove();
+  if (currentExhId === id) backExhList();
+};
+
+window.openExhDetail = (id) => {
+  currentExhId = id;
+  document.getElementById('exhListView').style.display = 'none';
+  document.getElementById('exhDetailView').style.display = 'block';
+  renderExhDetail();
+};
+
+window.backExhList = () => {
+  currentExhId = null;
+  document.getElementById('exhDetailView').style.display = 'none';
+  document.getElementById('exhListView').style.display = 'block';
+  renderExhList();
+};
+
+function renderExhDetail() {
+  if (!currentExhId) return;
+  const ex = cachedExhibitions[currentExhId];
+  if (!ex) { backExhList(); return; }
+  const rows = document.getElementById('exhStudentRows');
+  document.getElementById('exhDetailTitle').textContent = ex.name || '名称未設定';
+  const students = ex.students || {};
+  const total = Object.keys(students).length;
+  const paid = Object.values(students).filter(s => s && s.paid).length;
+  const fee = Number(ex.fee || 0);
+  document.getElementById('exhDetailMeta').innerHTML = [
+    ex.deadline ? `<span class="exh-chip">〆切 ${fmtShortDate(ex.deadline)}</span>` : '',
+    ex.start ? `<span class="exh-chip">開催 ${fmtShortDate(ex.start)}</span>` : '',
+    fee ? `<span class="exh-chip">出品料 ¥${fee.toLocaleString()}</span>` : '',
+    `<span class="exh-chip">入金 ${paid}/${total}人</span>`
+  ].filter(Boolean).join('');
+  const entries = Object.entries(students).sort((a,b) => (a[1]?.name || '').localeCompare(b[1]?.name || '', 'ja'));
+  if (!entries.length) {
+    rows.innerHTML = '<div class="empty">参加生徒がまだいません</div>';
+    return;
+  }
+  rows.innerHTML = entries.map(([uid, s]) => `
+    <div class="exh-student-row">
+      <div class="exh-student-name">${escapeHtml(s.name || cachedStudentData?.[uid]?.display || uid)}</div>
+      <button class="exh-pay-btn${s.paid ? ' paid' : ''}" onclick="toggleExhPaid('${uid}')">${s.paid ? '入金済み' : '未払い'}</button>
+      <input class="exh-note-input" value="${escapeHtml(s.note || '')}" placeholder="メモ" onchange="saveExhStudentNote('${uid}', this.value)">
+      <button class="exh-action danger" onclick="removeExhStudent('${uid}')">削除</button>
+    </div>
+  `).join('');
+}
+
+function availableExhStudents() {
+  const existing = cachedExhibitions?.[currentExhId]?.students || {};
+  return Object.entries(cachedStudentData || {}).map(([uid, d]) => ({
+    uid,
+    name: d.display || uid,
+    added: !!existing[uid]
+  })).sort((a,b) => a.name.localeCompare(b.name, 'ja'));
+}
+
+function renderExhStudentPicker() {
+  const list = document.getElementById('exhStudentPickerList');
+  const students = availableExhStudents();
+  if (!students.length) {
+    list.innerHTML = '<div class="empty">登録されている生徒がいません</div>';
+    return;
+  }
+  list.innerHTML = students.map(s => `
+    <label class="exh-picker-row${s.added ? ' disabled' : ''}">
+      <input type="checkbox" value="${s.uid}" ${s.added ? 'disabled checked' : ''} ${exhPickerSelected.has(s.uid) ? 'checked' : ''} onchange="toggleExhPickerStudent('${s.uid}', this.checked)">
+      <span>${escapeHtml(s.name)}${s.added ? '（追加済み）' : ''}</span>
+    </label>
+  `).join('');
+}
+
+window.addExhStudent = () => {
+  if (!currentExhId) return;
+  exhPickerSelected = new Set();
+  renderExhStudentPicker();
+  document.getElementById('exhStudentPickerOverlay').classList.add('open');
+};
+
+window.toggleExhPickerStudent = (uid, checked) => {
+  if (checked) exhPickerSelected.add(uid);
+  else exhPickerSelected.delete(uid);
+};
+
+window.selectAllExhStudents = () => {
+  availableExhStudents().filter(s => !s.added).forEach(s => exhPickerSelected.add(s.uid));
+  renderExhStudentPicker();
+};
+
+window.clearExhStudentSelection = () => {
+  exhPickerSelected = new Set();
+  renderExhStudentPicker();
+};
+
+window.closeExhStudentPicker = () => {
+  exhPickerSelected = new Set();
+  document.getElementById('exhStudentPickerOverlay').classList.remove('open');
+};
+
+window.savePickedExhStudents = async () => {
+  if (!currentExhId || exhPickerSelected.size === 0) { closeExhStudentPicker(); return; }
+  const updates = {};
+  const now = Date.now();
+  Object.entries(cachedStudentData || {}).forEach(([uid, d]) => {
+    if (!exhPickerSelected.has(uid)) return;
+    updates[`exhibitions/${currentExhId}/students/${uid}`] = {
+      name: d.display || uid,
+      paid: false,
+      note: '',
+      addedAt: now
+    };
+  });
+  await db.ref().update(updates);
+  closeExhStudentPicker();
+};
+
+window.toggleExhPaid = async (uid) => {
+  const cur = !!cachedExhibitions?.[currentExhId]?.students?.[uid]?.paid;
+  await db.ref(`exhibitions/${currentExhId}/students/${uid}/paid`).set(!cur);
+};
+
+window.saveExhStudentNote = async (uid, note) => {
+  await db.ref(`exhibitions/${currentExhId}/students/${uid}/note`).set(note.trim());
+};
+
+window.removeExhStudent = async (uid) => {
+  const name = cachedExhibitions?.[currentExhId]?.students?.[uid]?.name || 'この生徒';
+  if (!confirm(`${name}をこの展覧会から外しますか？`)) return;
+  await db.ref(`exhibitions/${currentExhId}/students/${uid}`).remove();
 };
 
 window.openStudentDetail = async (uid) => {
@@ -1972,7 +2468,7 @@ window.saveLessonDay = async (day) => {
 };
 window.closeDayPicker = () => { document.getElementById('dayPickerOverlay').classList.remove('open'); dayPickerUid = null; };
 
-['confirmOverlay','detailOverlay','studentDetailOverlay','historyOverlay','delEntryOverlay','delStudentOverlay','dayPickerOverlay'].forEach(id => {
+['confirmOverlay','detailOverlay','studentDetailOverlay','historyOverlay','delEntryOverlay','delStudentOverlay','dayPickerOverlay','exhModalOverlay','exhStudentPickerOverlay'].forEach(id => {
   document.getElementById(id).addEventListener('click', function(e) { if(e.target===this) this.classList.remove('open'); });
 });
 
@@ -2090,6 +2586,23 @@ function toggleSelectAll(){window.toggleSelectAll&&window.toggleSelectAll()}
 function saveOnePhoto(u,i){window.saveOnePhoto&&window.saveOnePhoto(u,i)}
 function saveSelectedPhotos(){window.saveSelectedPhotos&&window.saveSelectedPhotos()}
 function switchTeacherTab(t){window.switchTeacherTab&&window.switchTeacherTab(t)}
+function openExhModal(id){window.openExhModal&&window.openExhModal(id)}
+function closeExhModal(){window.closeExhModal&&window.closeExhModal()}
+function saveExh(){window.saveExh&&window.saveExh()}
+function handleExhPhotos(e){window.handleExhPhotos&&window.handleExhPhotos(e)}
+function deleteExh(id){window.deleteExh&&window.deleteExh(id)}
+function openExhDetail(id){window.openExhDetail&&window.openExhDetail(id)}
+function openExhImageViewer(id){window.openExhImageViewer&&window.openExhImageViewer(id)}
+function backExhList(){window.backExhList&&window.backExhList()}
+function addExhStudent(){window.addExhStudent&&window.addExhStudent()}
+function toggleExhPickerStudent(uid,checked){window.toggleExhPickerStudent&&window.toggleExhPickerStudent(uid,checked)}
+function selectAllExhStudents(){window.selectAllExhStudents&&window.selectAllExhStudents()}
+function clearExhStudentSelection(){window.clearExhStudentSelection&&window.clearExhStudentSelection()}
+function closeExhStudentPicker(){window.closeExhStudentPicker&&window.closeExhStudentPicker()}
+function savePickedExhStudents(){window.savePickedExhStudents&&window.savePickedExhStudents()}
+function toggleExhPaid(uid){window.toggleExhPaid&&window.toggleExhPaid(uid)}
+function saveExhStudentNote(uid,note){window.saveExhStudentNote&&window.saveExhStudentNote(uid,note)}
+function removeExhStudent(uid){window.removeExhStudent&&window.removeExhStudent(uid)}
 function openStudentDetail(u){window.openStudentDetail&&window.openStudentDetail(u)}
 function closeStudentDetail(){window.closeStudentDetail&&window.closeStudentDetail()}
 function openTeacherRankEdit(g){window.openTeacherRankEdit&&window.openTeacherRankEdit(g)}
