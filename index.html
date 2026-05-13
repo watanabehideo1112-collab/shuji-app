@@ -4,6 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>書道手帳</title>
+<meta name="apple-mobile-web-app-title" content="書道手帳">
+<meta name="theme-color" content="#1a1a2e">
+<link rel="apple-touch-icon" sizes="180x180" href="./shuji-icon-180.png">
+<link rel="icon" type="image/png" sizes="180x180" href="./shuji-icon-180.png">
+<link rel="icon" type="image/png" sizes="1024x1024" href="./shuji-icon.png">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -260,6 +265,8 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--paper);color:var(--t
 .exh-photo-drop{margin-top:10px;border:1px dashed var(--border);border-radius:12px;background:var(--paper);padding:16px;text-align:center;color:var(--text-sub);font-size:13px;cursor:pointer}
 .exh-photo-previews{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
 .exh-photo-preview{width:58px;height:58px;border-radius:8px;object-fit:cover;border:0.5px solid var(--border)}
+.exh-photo-preview-wrap{position:relative}
+.exh-photo-del{position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:50%;border:none;background:#dc2626;color:#fff;font-size:12px;line-height:20px;cursor:pointer}
 .grid-cell img {
   -webkit-touch-callout: default;
   -webkit-user-select: auto;
@@ -1584,7 +1591,7 @@ window.openExhImageViewer = (id) => {
   overlay.style.cssText = `
     position:fixed;inset:0;background:rgba(0,0,0,.94);z-index:10000;
     display:flex;flex-direction:column;align-items:center;justify-content:center;
-    touch-action:manipulation;
+    touch-action:auto;
   `;
   const render = () => {
     overlay.innerHTML = `
@@ -1598,15 +1605,15 @@ window.openExhImageViewer = (id) => {
         <button id="exhViewerNext" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);border:none;border-radius:50%;width:42px;height:42px;background:rgba(255,255,255,.18);color:#fff;font-size:24px">›</button>
       ` : ''}
     `;
-    document.getElementById('exhViewerClose').onclick = () => overlay.remove();
-    const prev = document.getElementById('exhViewerPrev');
-    const next = document.getElementById('exhViewerNext');
+    overlay.querySelector('#exhViewerClose').onclick = () => overlay.remove();
+    const prev = overlay.querySelector('#exhViewerPrev');
+    const next = overlay.querySelector('#exhViewerNext');
     if (prev) prev.onclick = (e) => { e.stopPropagation(); idx = (idx + urls.length - 1) % urls.length; render(); };
     if (next) next.onclick = (e) => { e.stopPropagation(); idx = (idx + 1) % urls.length; render(); };
   };
   overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
-  render();
   document.body.appendChild(overlay);
+  render();
 };
 
 window.openExhModal = (id = null) => {
@@ -1641,10 +1648,40 @@ function renderExhPhotoPreviews() {
   const wrap = document.getElementById('exhPhotoPreviews');
   if (!wrap) return;
   const existing = editingExhId ? (cachedExhibitions[editingExhId]?.imageUrls || (cachedExhibitions[editingExhId]?.imageUrl ? [cachedExhibitions[editingExhId].imageUrl] : [])) : [];
-  const existingHtml = existing.map(url => `<img class="exh-photo-preview" src="${escapeHtml(url)}">`).join('');
-  const pendingHtml = exhPendingFiles.map(file => `<img class="exh-photo-preview" src="${URL.createObjectURL(file)}">`).join('');
+  const existingHtml = existing.map((url, i) => `
+    <div class="exh-photo-preview-wrap">
+      <img class="exh-photo-preview" src="${escapeHtml(url)}">
+      <button type="button" class="exh-photo-del" onclick="removeExhExistingImage(${i})">×</button>
+    </div>
+  `).join('');
+  const pendingHtml = exhPendingFiles.map((file, i) => `
+    <div class="exh-photo-preview-wrap">
+      <img class="exh-photo-preview" src="${URL.createObjectURL(file)}">
+      <button type="button" class="exh-photo-del" onclick="removeExhPendingImage(${i})">×</button>
+    </div>
+  `).join('');
   wrap.innerHTML = existingHtml + pendingHtml;
 }
+
+window.removeExhPendingImage = (index) => {
+  exhPendingFiles.splice(index, 1);
+  renderExhPhotoPreviews();
+};
+
+window.removeExhExistingImage = async (index) => {
+  if (!editingExhId) return;
+  const ex = cachedExhibitions[editingExhId] || {};
+  const images = ex.imageUrls || (ex.imageUrl ? [ex.imageUrl] : []);
+  const url = images[index];
+  if (!url) return;
+  if (!confirm('この画像を削除しますか？')) return;
+  const next = images.filter((_, i) => i !== index);
+  await db.ref(`exhibitions/${editingExhId}/imageUrls`).set(next);
+  await db.ref(`exhibitions/${editingExhId}/imageUrl`).remove();
+  try { await storage.refFromURL(url).delete(); } catch(e) {}
+  cachedExhibitions[editingExhId] = { ...ex, imageUrls: next };
+  renderExhPhotoPreviews();
+};
 
 window.saveExh = async () => {
   const btn = document.getElementById('exhSaveBtn');
@@ -2590,6 +2627,8 @@ function openExhModal(id){window.openExhModal&&window.openExhModal(id)}
 function closeExhModal(){window.closeExhModal&&window.closeExhModal()}
 function saveExh(){window.saveExh&&window.saveExh()}
 function handleExhPhotos(e){window.handleExhPhotos&&window.handleExhPhotos(e)}
+function removeExhPendingImage(i){window.removeExhPendingImage&&window.removeExhPendingImage(i)}
+function removeExhExistingImage(i){window.removeExhExistingImage&&window.removeExhExistingImage(i)}
 function deleteExh(id){window.deleteExh&&window.deleteExh(id)}
 function openExhDetail(id){window.openExhDetail&&window.openExhDetail(id)}
 function openExhImageViewer(id){window.openExhImageViewer&&window.openExhImageViewer(id)}
