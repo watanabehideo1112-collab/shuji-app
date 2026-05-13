@@ -113,8 +113,8 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--paper);color:var(--t
 .empty{text-align:center;padding:2.5rem;color:var(--text-sub);font-size:13px}
 .loading{text-align:center;padding:2rem;color:var(--text-sub);font-size:13px}
 
-.view-tabs{display:flex;gap:6px;margin-bottom:1rem}
-.view-tab{flex:1;padding:8px;text-align:center;font-size:13px;font-weight:500;border-radius:var(--radius-sm);border:0.5px solid var(--border);cursor:pointer;background:var(--paper);color:var(--text-sub);font-family:'Noto Sans JP',sans-serif;transition:all .15s}
+.view-tabs{display:flex;gap:6px;margin-bottom:1rem;flex-wrap:wrap}
+.view-tab{flex:1;min-width:120px;padding:8px;text-align:center;font-size:13px;font-weight:500;border-radius:var(--radius-sm);border:0.5px solid var(--border);cursor:pointer;background:var(--paper);color:var(--text-sub);font-family:'Noto Sans JP',sans-serif;transition:all .15s}
 .view-tab.active{background:var(--ink);color:#fff;border-color:transparent}
 .student-card{padding:12px 16px;border-bottom:0.5px solid var(--border);cursor:pointer;transition:background .1s,border-color .1s}
 .student-card.paid{background:rgba(6,199,85,.08);border-left:4px solid #06c755}
@@ -212,6 +212,10 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--paper);color:var(--t
   .exh-toolbar{align-items:flex-start}
   .exh-student-row{grid-template-columns:1fr;gap:6px;padding:12px 0}
   .exh-form-grid{grid-template-columns:1fr}
+  .material-toolbar{display:block}
+  .material-toolbar-actions{justify-content:flex-start;margin-top:12px}
+  .material-grid{grid-template-columns:1fr}
+  .material-form-grid{grid-template-columns:1fr}
 }
 .modal-danger:hover{opacity:.9}
 
@@ -267,6 +271,29 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--paper);color:var(--t
 .exh-photo-preview{width:58px;height:58px;border-radius:8px;object-fit:cover;border:0.5px solid var(--border)}
 .exh-photo-preview-wrap{position:relative}
 .exh-photo-del{position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:50%;border:none;background:#dc2626;color:#fff;font-size:12px;line-height:20px;cursor:pointer}
+.material-toolbar{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:16px;border-bottom:0.5px solid var(--border)}
+.material-toolbar-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.material-add-btn{border:none;border-radius:99px;background:linear-gradient(135deg,var(--purple),var(--purple2));color:#fff;font-size:13px;font-weight:700;padding:10px 15px;cursor:pointer;font-family:'Noto Sans JP',sans-serif;box-shadow:0 4px 14px rgba(102,126,234,.2)}
+.material-cat-add-btn{border:0.5px solid var(--border);border-radius:99px;background:#fff;color:var(--text-sub);font-size:13px;font-weight:700;padding:10px 13px;cursor:pointer;font-family:'Noto Sans JP',sans-serif}
+.material-cat-tabs{display:flex;gap:6px;flex-wrap:wrap;padding:12px 16px;border-bottom:0.5px solid var(--border)}
+.material-cat-tab{border:0.5px solid var(--border);border-radius:99px;background:var(--paper);color:var(--text-sub);font-size:12px;padding:6px 11px;cursor:pointer;font-family:'Noto Sans JP',sans-serif}
+.material-cat-tab.active{background:var(--ink);color:#fff;border-color:transparent}
+.material-list{padding:14px 16px 18px}
+.material-section{margin-bottom:18px}
+.material-section:last-child{margin-bottom:0}
+.material-section-title{font-size:12px;font-weight:700;color:var(--purple2);letter-spacing:.06em;margin-bottom:8px;display:flex;align-items:center;gap:8px}
+.material-section-title::before{content:'';width:8px;height:8px;border-radius:50%;background:linear-gradient(135deg,var(--purple),var(--purple2))}
+.material-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.material-card{background:#fff;border:0.5px solid var(--border);border-radius:12px;padding:13px 14px;box-shadow:0 3px 14px rgba(26,26,46,.05)}
+.material-card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:8px}
+.material-name{font-size:15px;font-weight:700;line-height:1.45;word-break:break-word}
+.material-price{font-size:18px;font-weight:700;color:#9f2d14;white-space:nowrap}
+.material-meta{font-size:12px;color:var(--text-sub);line-height:1.6}
+.material-note{font-size:13px;color:var(--text-sub);line-height:1.6;background:var(--paper);border-radius:8px;padding:8px 10px;margin-top:9px;white-space:pre-wrap}
+.material-actions{display:flex;gap:6px;justify-content:flex-end;margin-top:10px}
+.material-empty{padding:18px;border:0.5px dashed var(--border);border-radius:12px;color:var(--text-sub);font-size:13px;text-align:center;background:var(--paper)}
+.material-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.material-modal-label{font-size:11px;color:var(--text-sub);display:block;margin:10px 0 4px}
 .grid-cell img {
   -webkit-touch-callout: default;
   -webkit-user-select: auto;
@@ -369,6 +396,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--paper);color:var(--t
         <div class="view-tab active" onclick="switchTeacherTab('students')">生徒一覧</div>
         <div class="view-tab" onclick="switchTeacherTab('daymemo')">曜日別メモ</div>
         <div class="view-tab" onclick="switchTeacherTab('exhibitions')">展覧会管理</div>
+        <div class="view-tab" onclick="switchTeacherTab('materials')">教材メモ</div>
       </div>
       <div id="teacherStudents">
         <div class="card">
@@ -437,6 +465,22 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--paper);color:var(--t
               <div id="exhStudentRows"></div>
             </div>
           </div>
+        </div>
+      </div>
+      <div id="teacherMaterials" style="display:none">
+        <div class="card">
+          <div class="material-toolbar">
+            <div>
+              <div class="card-head-label">教材メモ</div>
+              <div style="font-size:12px;color:var(--text-sub);margin-top:4px">紙・墨・筆などの金額をカテゴリごとに確認します</div>
+            </div>
+            <div class="material-toolbar-actions">
+              <button class="material-cat-add-btn" onclick="addMaterialCategory()">＋ カテゴリ</button>
+              <button class="material-add-btn" onclick="openMaterialModal()">＋ 教材を追加</button>
+            </div>
+          </div>
+          <div id="materialCatTabs" class="material-cat-tabs"></div>
+          <div id="materialList" class="material-list"><div class="loading">読み込み中...</div></div>
         </div>
       </div>
     </div>
@@ -590,6 +634,33 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--paper);color:var(--t
       <button class="day-pick-btn" style="background:var(--paper);color:var(--text-sub)" onclick="saveLessonDay(null)">設定なし</button>
     </div>
     <button class="modal-cancel" style="width:100%" onclick="closeDayPicker()">キャンセル</button>
+  </div>
+</div>
+
+<!-- 教材追加・編集モーダル -->
+<div class="overlay" id="materialModalOverlay">
+  <div class="modal" style="max-width:430px">
+    <h3 id="materialModalTitle">教材を追加</h3>
+    <label class="material-modal-label">名前</label>
+    <input id="materialNameInput" type="text" placeholder="例：半紙 1000枚" style="width:100%;font-size:13px" />
+    <div class="material-form-grid">
+      <div>
+        <label class="material-modal-label">カテゴリ</label>
+        <select id="materialCategoryInput" style="width:100%;font-size:13px"></select>
+      </div>
+      <div>
+        <label class="material-modal-label">金額</label>
+        <input id="materialPriceInput" type="number" min="0" placeholder="例：1280" style="width:100%;font-size:13px" />
+      </div>
+    </div>
+    <label class="material-modal-label">お店・購入先</label>
+    <input id="materialShopInput" type="text" placeholder="例：〇〇書道用品" style="width:100%;font-size:13px" />
+    <label class="material-modal-label">メモ</label>
+    <textarea id="materialNoteInput" placeholder="例：小学生用によく使う、在庫注意など..." style="width:100%;font-size:13px;min-height:80px"></textarea>
+    <div class="modal-btns" style="margin-top:1rem">
+      <button type="button" class="modal-cancel" onclick="closeMaterialModal()">キャンセル</button>
+      <button type="button" class="modal-ok" id="materialSaveBtn" onclick="saveMaterial()">保存する</button>
+    </div>
   </div>
 </div>
 
@@ -860,8 +931,12 @@ let cachedEntries = null;
 let studentSortMode = 'all';
 let cachedStudentData = null;
 let cachedExhibitions = {};
+let cachedMaterials = {};
+let cachedMaterialCategories = {};
 let currentExhId = null;
 let editingExhId = null;
+let editingMaterialId = null;
+let selectedMaterialCategory = 'all';
 let exhPickerSelected = new Set();
 let exhPendingFiles = [];
 let pendingDelEntryKey = null;
@@ -1402,6 +1477,14 @@ function listenTeacher() {
     renderExhList();
     if (currentExhId) renderExhDetail();
   }));
+  unsubFns.push(db.ref('materials').on('value', snap => {
+    cachedMaterials = snap.val() || {};
+    renderMaterialList();
+  }));
+  unsubFns.push(db.ref('material_categories').on('value', snap => {
+    cachedMaterialCategories = snap.val() || {};
+    renderMaterialList();
+  }));
 }
 
 function getLatestTs(d) {
@@ -1494,16 +1577,18 @@ function renderFeed(data) {
 }
 
 window.switchTeacherTab = (tab) => {
-  document.querySelectorAll('.view-tab').forEach((t,i) => t.classList.toggle('active', ['students','daymemo','exhibitions'][i]===tab));
+  document.querySelectorAll('.view-tab').forEach((t,i) => t.classList.toggle('active', ['students','daymemo','exhibitions','materials'][i]===tab));
   document.getElementById('teacherStudents').style.display = tab==='students' ? 'block' : 'none';
   document.getElementById('teacherFeed').style.display = tab==='daymemo' ? 'block' : 'none';
   document.getElementById('teacherExhibitions').style.display = tab==='exhibitions' ? 'block' : 'none';
+  document.getElementById('teacherMaterials').style.display = tab==='materials' ? 'block' : 'none';
   if (tab==='daymemo') {
     loadDayMemos().then(() => {
       setDayMemoInputs(currentDayMemo);
     });
   }
   if (tab==='exhibitions') renderExhList();
+  if (tab==='materials') renderMaterialList();
 };
 
 function escapeHtml(value) {
@@ -1524,6 +1609,155 @@ function daysUntilDate(value) {
   todayDate.setHours(0,0,0,0);
   return Math.ceil((target - todayDate) / 86400000);
 }
+
+const DEFAULT_MATERIAL_CATEGORIES = ['紙類','墨類','筆類','硯・文鎮類','手本・教材','その他'];
+
+function materialCategories() {
+  const saved = Object.entries(cachedMaterialCategories || {})
+    .map(([id, c]) => ({ id, name: typeof c === 'string' ? c : c?.name, order: c?.order || 0 }))
+    .filter(c => c.name)
+    .sort((a,b) => (a.order - b.order) || a.name.localeCompare(b.name, 'ja'))
+    .map(c => c.name);
+  const used = Object.values(cachedMaterials || {}).map(m => m?.category).filter(Boolean);
+  return [...new Set([...DEFAULT_MATERIAL_CATEGORIES, ...saved, ...used])];
+}
+
+function materialArray() {
+  return Object.entries(cachedMaterials || {}).map(([id, m]) => ({ id, ...(m || {}) }))
+    .sort((a,b) => (a.category || '').localeCompare(b.category || '', 'ja') || (a.name || '').localeCompare(b.name || '', 'ja'));
+}
+
+function renderMaterialCategoryTabs(categories) {
+  const tabs = document.getElementById('materialCatTabs');
+  if (!tabs) return;
+  const items = ['all', ...categories];
+  tabs.innerHTML = items.map(cat => {
+    const label = cat === 'all' ? 'すべて' : cat;
+    return `<button class="material-cat-tab${selectedMaterialCategory === cat ? ' active' : ''}" onclick="setMaterialCategory('${encodeURIComponent(cat)}')">${escapeHtml(label)}</button>`;
+  }).join('');
+}
+
+function renderMaterialList() {
+  const wrap = document.getElementById('materialList');
+  if (!wrap) return;
+  const categories = materialCategories();
+  renderMaterialCategoryTabs(categories);
+  const list = materialArray();
+  const visibleCategories = selectedMaterialCategory === 'all' ? categories : [selectedMaterialCategory];
+  const sections = visibleCategories.map(category => {
+    const items = list.filter(m => (m.category || 'その他') === category);
+    if (!items.length && selectedMaterialCategory !== 'all') {
+      return `<div class="material-section">
+        <div class="material-section-title">${escapeHtml(category)}</div>
+        <div class="material-empty">このカテゴリにはまだ教材がありません</div>
+      </div>`;
+    }
+    if (!items.length) return '';
+    return `<div class="material-section">
+      <div class="material-section-title">${escapeHtml(category)}</div>
+      <div class="material-grid">
+        ${items.map(m => {
+          const price = Number(m.price || 0);
+          return `<div class="material-card">
+            <div class="material-card-head">
+              <div class="material-name">${escapeHtml(m.name || '名前未設定')}</div>
+              <div class="material-price">${price ? `¥${price.toLocaleString()}` : '金額未設定'}</div>
+            </div>
+            ${m.shop ? `<div class="material-meta">購入先: ${escapeHtml(m.shop)}</div>` : ''}
+            ${m.note ? `<div class="material-note">${escapeHtml(m.note)}</div>` : ''}
+            <div class="material-actions">
+              <button class="exh-action" onclick="openMaterialModal('${m.id}')">編集</button>
+              <button class="exh-action danger" onclick="deleteMaterial('${m.id}')">削除</button>
+            </div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>`;
+  }).filter(Boolean).join('');
+  wrap.innerHTML = sections || '<div class="empty">まだ教材メモがありません。右上の「教材を追加」から登録できます。</div>';
+}
+
+window.setMaterialCategory = (encodedCategory) => {
+  selectedMaterialCategory = decodeURIComponent(encodedCategory);
+  renderMaterialList();
+};
+
+function fillMaterialCategorySelect(selected = '') {
+  const select = document.getElementById('materialCategoryInput');
+  if (!select) return;
+  const categories = materialCategories();
+  const value = selected || (selectedMaterialCategory !== 'all' ? selectedMaterialCategory : categories[0]);
+  select.innerHTML = categories.map(cat => `<option value="${escapeHtml(cat)}">${escapeHtml(cat)}</option>`).join('');
+  select.value = categories.includes(value) ? value : categories[0];
+}
+
+window.openMaterialModal = (id = null) => {
+  editingMaterialId = id;
+  const m = id ? cachedMaterials[id] || {} : {};
+  document.getElementById('materialModalTitle').textContent = id ? '教材を編集' : '教材を追加';
+  document.getElementById('materialNameInput').value = m.name || '';
+  document.getElementById('materialPriceInput').value = m.price || '';
+  document.getElementById('materialShopInput').value = m.shop || '';
+  document.getElementById('materialNoteInput').value = m.note || '';
+  fillMaterialCategorySelect(m.category || '');
+  document.getElementById('materialModalOverlay').classList.add('open');
+};
+
+window.closeMaterialModal = () => {
+  editingMaterialId = null;
+  document.getElementById('materialModalOverlay').classList.remove('open');
+};
+
+window.saveMaterial = async () => {
+  const btn = document.getElementById('materialSaveBtn');
+  const original = btn ? btn.textContent : '';
+  try {
+    const name = document.getElementById('materialNameInput').value.trim();
+    if (!name) { alert('教材名を入力してください'); return; }
+    const data = {
+      name,
+      category: document.getElementById('materialCategoryInput').value || 'その他',
+      price: Number(document.getElementById('materialPriceInput').value) || 0,
+      shop: document.getElementById('materialShopInput').value.trim(),
+      note: document.getElementById('materialNoteInput').value.trim(),
+      updatedAt: Date.now()
+    };
+    if (btn) { btn.disabled = true; btn.textContent = '保存中...'; }
+    if (editingMaterialId) {
+      await db.ref(`materials/${editingMaterialId}`).update(data);
+    } else {
+      data.createdAt = Date.now();
+      await db.ref('materials').push(data);
+    }
+    selectedMaterialCategory = data.category;
+    closeMaterialModal();
+    renderMaterialList();
+  } catch (err) {
+    alert('教材メモを保存できませんでした: ' + (err.message || err));
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = original || '保存する'; }
+  }
+};
+
+window.deleteMaterial = async (id) => {
+  const m = cachedMaterials[id] || {};
+  if (!confirm(`${m.name || 'この教材'}を削除しますか？`)) return;
+  await db.ref(`materials/${id}`).remove();
+};
+
+window.addMaterialCategory = async () => {
+  const name = prompt('追加するカテゴリ名を入力してください\n例：下敷き類、印材、半紙など');
+  const trimmed = (name || '').trim();
+  if (!trimmed) return;
+  if (materialCategories().includes(trimmed)) {
+    selectedMaterialCategory = trimmed;
+    renderMaterialList();
+    return;
+  }
+  await db.ref('material_categories').push({ name: trimmed, order: Date.now() });
+  selectedMaterialCategory = trimmed;
+  renderMaterialList();
+};
 
 function exhDateChip(label, value) {
   if (!value) return '';
@@ -1596,12 +1830,12 @@ window.openExhImageViewer = (id) => {
   overlay.innerHTML = `
     <div style="position:absolute;top:14px;left:16px;right:16px;display:flex;justify-content:space-between;align-items:center;color:#fff;font-size:14px;z-index:2">
       <span id="exhViewerLabel"></span>
-      <button id="exhViewerClose" style="border:none;border-radius:99px;background:rgba(255,255,255,.18);color:#fff;padding:8px 13px;font-size:14px">閉じる</button>
+      <button id="exhViewerClose" style="border:1px solid rgba(255,255,255,.6);border-radius:99px;background:rgba(18,18,32,.88);color:#fff;padding:8px 13px;font-size:14px;box-shadow:0 8px 22px rgba(0,0,0,.55)">閉じる</button>
     </div>
     <img id="exhViewerImage" style="max-width:100%;max-height:100%;object-fit:contain;-webkit-user-select:auto;-webkit-touch-callout:default">
     ${urls.length > 1 ? `
-      <button id="exhViewerPrev" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);border:none;border-radius:50%;width:42px;height:42px;background:rgba(255,255,255,.18);color:#fff;font-size:24px">‹</button>
-      <button id="exhViewerNext" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);border:none;border-radius:50%;width:42px;height:42px;background:rgba(255,255,255,.18);color:#fff;font-size:24px">›</button>
+      <button id="exhViewerPrev" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);border:2px solid rgba(255,255,255,.9);border-radius:50%;width:52px;height:52px;background:rgba(18,18,32,.9);color:#fff;font-size:34px;font-weight:700;line-height:1;box-shadow:0 8px 26px rgba(0,0,0,.65);text-shadow:0 2px 4px rgba(0,0,0,.7)">‹</button>
+      <button id="exhViewerNext" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);border:2px solid rgba(255,255,255,.9);border-radius:50%;width:52px;height:52px;background:rgba(18,18,32,.9);color:#fff;font-size:34px;font-weight:700;line-height:1;box-shadow:0 8px 26px rgba(0,0,0,.65);text-shadow:0 2px 4px rgba(0,0,0,.7)">›</button>
     ` : ''}
   `;
   const image = overlay.querySelector('#exhViewerImage');
