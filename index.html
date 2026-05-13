@@ -1593,27 +1593,31 @@ window.openExhImageViewer = (id) => {
     display:flex;flex-direction:column;align-items:center;justify-content:center;
     touch-action:auto;
   `;
-  const render = () => {
-    overlay.innerHTML = `
-      <div style="position:absolute;top:14px;left:16px;right:16px;display:flex;justify-content:space-between;align-items:center;color:#fff;font-size:14px;z-index:2">
-        <span>${escapeHtml(ex.name || '展覧会')} ${idx + 1}/${urls.length}</span>
-        <button id="exhViewerClose" style="border:none;border-radius:99px;background:rgba(255,255,255,.18);color:#fff;padding:8px 13px;font-size:14px">閉じる</button>
-      </div>
-      <img src="${escapeHtml(urls[idx])}" style="max-width:100%;max-height:100%;object-fit:contain;-webkit-user-select:auto;-webkit-touch-callout:default">
-      ${urls.length > 1 ? `
-        <button id="exhViewerPrev" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);border:none;border-radius:50%;width:42px;height:42px;background:rgba(255,255,255,.18);color:#fff;font-size:24px">‹</button>
-        <button id="exhViewerNext" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);border:none;border-radius:50%;width:42px;height:42px;background:rgba(255,255,255,.18);color:#fff;font-size:24px">›</button>
-      ` : ''}
-    `;
-    overlay.querySelector('#exhViewerClose').onclick = () => overlay.remove();
-    const prev = overlay.querySelector('#exhViewerPrev');
-    const next = overlay.querySelector('#exhViewerNext');
-    if (prev) prev.onclick = (e) => { e.stopPropagation(); idx = (idx + urls.length - 1) % urls.length; render(); };
-    if (next) next.onclick = (e) => { e.stopPropagation(); idx = (idx + 1) % urls.length; render(); };
+  overlay.innerHTML = `
+    <div style="position:absolute;top:14px;left:16px;right:16px;display:flex;justify-content:space-between;align-items:center;color:#fff;font-size:14px;z-index:2">
+      <span id="exhViewerLabel"></span>
+      <button id="exhViewerClose" style="border:none;border-radius:99px;background:rgba(255,255,255,.18);color:#fff;padding:8px 13px;font-size:14px">閉じる</button>
+    </div>
+    <img id="exhViewerImage" style="max-width:100%;max-height:100%;object-fit:contain;-webkit-user-select:auto;-webkit-touch-callout:default">
+    ${urls.length > 1 ? `
+      <button id="exhViewerPrev" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);border:none;border-radius:50%;width:42px;height:42px;background:rgba(255,255,255,.18);color:#fff;font-size:24px">‹</button>
+      <button id="exhViewerNext" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);border:none;border-radius:50%;width:42px;height:42px;background:rgba(255,255,255,.18);color:#fff;font-size:24px">›</button>
+    ` : ''}
+  `;
+  const image = overlay.querySelector('#exhViewerImage');
+  const label = overlay.querySelector('#exhViewerLabel');
+  const show = () => {
+    image.src = urls[idx];
+    label.textContent = `${ex.name || '展覧会'} ${idx + 1}/${urls.length}`;
   };
+  overlay.querySelector('#exhViewerClose').onclick = (e) => { e.stopPropagation(); overlay.remove(); };
+  const prev = overlay.querySelector('#exhViewerPrev');
+  const next = overlay.querySelector('#exhViewerNext');
+  if (prev) prev.onclick = (e) => { e.stopPropagation(); idx = (idx + urls.length - 1) % urls.length; show(); };
+  if (next) next.onclick = (e) => { e.stopPropagation(); idx = (idx + 1) % urls.length; show(); };
   overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
   document.body.appendChild(overlay);
-  render();
+  show();
 };
 
 window.openExhModal = (id = null) => {
